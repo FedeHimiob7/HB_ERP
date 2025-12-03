@@ -71,7 +71,7 @@ namespace Identity.Domain
 
         public FullName Name => FullName.Create(FirstName, LastName);
 
-        public void SetPasswordHash(PasswordHash hash)  //preguntar
+        public void SetPasswordHash(PasswordHash hash)  
         {
             Guard.Against.Null(hash);
             PasswordHash = hash;
@@ -88,5 +88,38 @@ namespace Identity.Domain
                 Id
             ));
         }
+
+        public void AssignRole(RoleId roleId)
+        {
+            Guard.Against.Null(roleId);
+
+            if (_roles.Contains(roleId))
+                return;
+
+            _roles.Add(roleId);
+
+            Raise(new UserRoleAssignedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                roleId
+            ));
+        }
+
+        public void RemoveRole(RoleId roleId)
+        {
+            Guard.Against.Null(roleId);
+
+            if (!_roles.Contains(roleId))
+                return;
+
+            _roles.Remove(roleId);
+
+            Raise(new UserRoleRemovedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                roleId
+            ));
+        }
+
     }
 }
