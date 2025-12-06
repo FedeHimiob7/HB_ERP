@@ -23,7 +23,11 @@ namespace Identity.Domain.Entities
 
         public static Role Create(string name)
         {
-            return new Role(default, name);
+            return new Role(RoleId.New(), name);
+        }
+        public static Role CreateExisting(RoleId id, string name)
+        {
+            return new Role(id, name);
         }
 
         public void ChangeName(string name)

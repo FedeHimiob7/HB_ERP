@@ -1,9 +1,6 @@
 ﻿using ErrorOr;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Identity.Domain.Common;
+
 
 namespace Identity.Domain.DomainErrors
 {
@@ -11,22 +8,22 @@ namespace Identity.Domain.DomainErrors
     {
         public static Error InvalidEmail =>
             Error.Validation(
-                code: "User.InvalidEmail",
-                description: "El email no tiene un formato válido.");
+                code: ErrorCodes.User.InvalidEmail,
+                description: FeaturedMessage.EmailInvalido);
+
+        public static Error EmailAlreadyInUse =>
+            Error.Validation(
+                code: ErrorCodes.User.EmailAlreadyExists,
+                description: FeaturedMessage.UsuarioEmailYaRegistrado);
 
         public static Error EmptyFirstName =>
             Error.Validation(
-                code: "User.EmptyFirstName",
-                description: "El nombre no puede estar vacío.");
+                code: ErrorCodes.User.UserFirstNameEmpty,
+                description: FeaturedMessage.UserFirstNameVacio);
 
         public static Error EmptyLastName =>
             Error.Validation(
-                code: "User.EmptyLastName",
-                description: "El apellido no puede estar vacío.");
-
-        public static Error AlreadyInactive =>
-            Error.Validation(
-                code: "User.AlreadyInactive",
-                description: "El usuario ya está desactivado.");
+                code: ErrorCodes.User.UserLastNameEmpty,
+                description: FeaturedMessage.UserLastNameVacio);
     }
 }

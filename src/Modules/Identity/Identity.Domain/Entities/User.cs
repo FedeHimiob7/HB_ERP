@@ -19,22 +19,36 @@ namespace Identity.Domain
         public Email Email { get; private set; } = null!;
         public bool IsActive { get; private set; }
         public bool ViewAll { get; private set; }
-        public PasswordHash? PasswordHash { get; private set; }   //preguntar
+        public PasswordHash? PasswordHash { get; private set; } 
         public IReadOnlyList<RoleId> Roles => _roles;
         private User() { }
 
-        private User(UserId id, string firstName, string lastName, Email email)
+        private User(UserId id, string firstName, string lastName, 
+                     Email email, PasswordHash passwordHash)
         : base(id)
         {
             FirstName = firstName;
             LastName = lastName;
             Email = email;
+            PasswordHash = passwordHash;
             IsActive = true;
+            ViewAll = false;
+        }
+        private User(UserId id, string firstName, string lastName, Email email, PasswordHash passwordHash,
+                     List<RoleId>? roles = null, bool isActive = true)
+        {
+            Id = id;     
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PasswordHash = passwordHash;
+            _roles = roles ?? new();
+            IsActive = isActive;
         }
 
-        public static User Register(string firstName, string lastName, Email email)
+        public static User Register(string firstName, string lastName, Email email, PasswordHash passwordHash)
         {
-            var user = new User(default, firstName, lastName, email);
+            var user = new User(UserId.New(), firstName, lastName, email, passwordHash);
 
             user.Raise(new UserRegisteredDomainEvent(
                 Guid.NewGuid(),
@@ -43,6 +57,21 @@ namespace Identity.Domain
             ));
 
             return user;
+        }
+
+        public static User CreateExisting(Guid id, string firstName, string lastName, Email email,
+                                          PasswordHash passwordHash, IEnumerable<RoleId>? roles, 
+                                          bool isActive)
+        {
+            return new User(
+                UserId.Create(id),
+                firstName,
+                lastName,
+                email,
+                passwordHash,
+                roles?.ToList() ?? new List<RoleId>(),
+                isActive
+            );
         }
 
         public void ChangeFirstName(string firstName)
@@ -63,8 +92,26 @@ namespace Identity.Domain
             Email = email;
         }
 
-        public void Activate() => IsActive = true;
-        public void Deactivate() => IsActive = false;
+        public void Activate()
+        {
+            if(IsActive)
+                return;
+            IsActive = true;
+            Raise(new UserActivatedDomainEvent(
+                Guid.NewGuid(),
+                Id
+            ));
+        }
+        public void Deactivate()
+        {
+            if (IsActive)
+                return;
+            IsActive = true;
+            Raise(new UserDeactivatedDomainEvent(
+                Guid.NewGuid(),
+                Id
+            ));
+        }
 
         public void ActivateViewAll() => ViewAll = true;
         public void DeactivateViewAll() => ViewAll = false;
