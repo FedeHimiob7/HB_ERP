@@ -22,6 +22,10 @@ namespace Identity.Infrastructure.Persistence
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.HasDefaultSchema("HB_ERP");
+
+            modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");
         }
 
         public DbSet<UserEntity> Users => Set<UserEntity>();

@@ -20,7 +20,13 @@ namespace Identity.Infrastructure
         public static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services, IConfiguration config)
         {
             services.AddDbContext<IdentityDbContext>(options =>
-                options.UseSqlServer(config.GetConnectionString("IdentityConnection"))); // cambiar ruta de conexion
+                options.UseSqlServer(config.GetConnectionString("DefaultConnection"),
+                sqlOptions =>
+                {
+                        sqlOptions.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName);
+                        sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "dbo");
+                })
+            ); 
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();

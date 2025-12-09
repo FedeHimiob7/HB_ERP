@@ -30,7 +30,6 @@ namespace Identity.Infrastructure.Persistence
         public bool ViewAll { get; set; }
         public string DefaultDashboard { get; set; }
         public bool IsActive { get; set; }
-        public bool IsViewAllWarehouse { get; set; }
 
 
         public ICollection<UserRoleEntity> UserRoles { get; set; } = new List<UserRoleEntity>();

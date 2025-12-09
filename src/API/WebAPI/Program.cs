@@ -1,4 +1,7 @@
 
+using Identity.Application;
+using Identity.Infrastructure;
+
 namespace WebAPI
 {
     public class Program
@@ -7,11 +10,9 @@ namespace WebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddPresentation()
+                            .AddIdentityInfrastructure(builder.Configuration)
+                            .AddApplication();
 
             var app = builder.Build();
 

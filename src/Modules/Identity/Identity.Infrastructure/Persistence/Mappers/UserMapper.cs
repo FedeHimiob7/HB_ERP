@@ -39,7 +39,7 @@ namespace Identity.Infrastructure.Persistence.Mappers
                 LastName = user.LastName,
 
                 ViewAll = user.ViewAll,
-                DefaultDashboard = null,
+                DefaultDashboard = string.Empty,
                 IsActive = user.IsActive
             };
         }
