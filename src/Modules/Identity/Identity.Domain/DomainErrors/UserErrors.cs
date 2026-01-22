@@ -25,5 +25,10 @@ namespace Identity.Domain.DomainErrors
             Error.Validation(
                 code: ErrorCodes.User.UserLastNameEmpty,
                 description: FeaturedMessage.UserLastNameVacio);
+
+        public static Error NotFound =>
+            Error.Validation(
+                code: ErrorCodes.User.UserNotFound,
+                description: FeaturedMessage.UserNotFound);
     }
 }

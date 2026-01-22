@@ -54,8 +54,26 @@ namespace Identity.Infrastructure.Persistence.Mappers
                 passwordHash: PasswordHash.Create(model.PasswordHash),
                 roles: model.UserRoles.Select(user => new RoleId(user.RoleId)),
                 isActive: model.IsActive
-   
+
             );
         }
+
+        public static void MapToExistingEntity(User source, UserEntity target)
+        {
+            target.FirstName = source.FirstName;
+            target.LastName = source.LastName;
+            target.Email = source.Email.Value;
+            target.NormalizedEmail = source.Email.Value.ToUpper();
+            target.IsActive = source.IsActive;
+
+            target.UserRoles = source.Roles
+                .Select(r => new UserRoleEntity
+                {
+                    UserId = target.Id,
+                    RoleId = r.Value
+                })
+                .ToList();
+        }
+       
     }
 }

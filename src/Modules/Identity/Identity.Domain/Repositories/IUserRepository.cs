@@ -11,6 +11,8 @@ namespace Identity.Domain
     {
         Task<User?> GetByIdAsync(UserId id);
         Task<User?> GetByEmailAsync(string email);
+        Task<List<User>> GetAllAsync();
+        Task UpdateAsync(User user);        
         Task AddAsync(User user);
     }
 }

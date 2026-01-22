@@ -22,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\User\Response\" />
+    <Folder Include="APIModels\Authentication\Role\Response\" />
+    <Folder Include="APIModels\Authentication\User\Response\" />
   </ItemGroup>
 
 </Project>

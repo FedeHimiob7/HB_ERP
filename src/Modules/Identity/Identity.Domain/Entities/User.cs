@@ -168,5 +168,18 @@ namespace Identity.Domain
             ));
         }
 
+        public void SyncRoles(IEnumerable<RoleId> newRoles)
+        {
+            Guard.Against.Null(newRoles);
+
+            var toAdd = newRoles.Except(_roles).ToList();
+            var toRemove = _roles.Except(newRoles).ToList();
+
+            foreach (var role in toAdd)
+                AssignRole(role);
+
+            foreach (var role in toRemove)
+                RemoveRole(role);
+        }
     }
 }

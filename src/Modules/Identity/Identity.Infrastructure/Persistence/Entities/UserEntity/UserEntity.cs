@@ -17,7 +17,7 @@ namespace Identity.Infrastructure.Persistence
         public string PasswordHash { get; set; } = default!;
         public string SecurityStamp { get; set; } = default!;
         public string ConcurrencyStamp { get; set; } = default!;
-        public string? PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; } //hay q agregar luego al dominio como un VO y validarlo 
         public bool PhoneNumberConfirmed { get; set; }
         public bool TwoFactorEnabled { get; set; }
         public DateTime? LockoutEnd { get; set; }

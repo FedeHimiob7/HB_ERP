@@ -17,7 +17,7 @@ namespace Identity.Infrastructure.Persistence.Repositories
         public Task<bool> IsEmailUniqueAsync(Email email, CancellationToken cancellationToken = default)
         {
             return _dbContext.Users
-                .AllAsync(u => u.NormalizedEmail != email.Value.ToUpperInvariant(), cancellationToken);
+                .AllAsync(x => x.NormalizedEmail != email.Value.ToUpperInvariant(), cancellationToken);
         }
     }
 }

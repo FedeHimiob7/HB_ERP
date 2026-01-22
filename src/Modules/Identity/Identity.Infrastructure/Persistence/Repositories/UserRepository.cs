@@ -40,5 +40,23 @@ namespace Identity.Infrastructure.Persistence.Repositories
             var model = UserMapper.ToModel(user);
             await _db.Users.AddAsync(model);
         }
+
+        public async Task<List<User>> GetAllAsync()
+        {
+            var models = await _db.Users.ToListAsync();
+            return models.Select(UserMapper.ToDomain).ToList();
+        }
+
+        public async Task UpdateAsync(User user)
+        {
+            var existing = await _db.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == user.Id.Value);
+
+            if (existing is null)
+                throw new InvalidOperationException("User not found in database");
+
+            UserMapper.MapToExistingEntity(user, existing);
+        }
     }
 }

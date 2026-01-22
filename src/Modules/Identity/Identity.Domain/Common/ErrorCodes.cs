@@ -15,6 +15,13 @@ namespace Identity.Domain.Common
             public const string PasswordWeak = "User.PasswordWeak";
             public const string UserFirstNameEmpty = "User.EmptyFirstName";
             public const string UserLastNameEmpty = "User.EmptyLastName";
+            public const string UserNotFound = "User.NotFound";
+        }
+
+        public static class Role
+        {
+            public const string DuplicateRoleName = "Role.DuplicateRoleName";
+            public const string RoleNotFound = "Role.NotFound";
         }
     }
 }

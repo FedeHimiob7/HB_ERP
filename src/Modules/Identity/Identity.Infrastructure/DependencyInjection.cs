@@ -1,6 +1,7 @@
 ﻿using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.Interface;
+using Identity.Domain.Repositories;
 using Identity.Infrastructure.Authentication;
 using Identity.Infrastructure.Persistence;
 using Identity.Infrastructure.Persistence.Repositories;
@@ -29,8 +30,11 @@ namespace Identity.Infrastructure
             ); 
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             services.AddScoped<IUserEmailUniquenessChecker, UserEmailUniquenessChecker>();
+            services.AddScoped<IRoleNameUniquenessChecker, RoleNameUniquenessChecker>();
 
             services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();

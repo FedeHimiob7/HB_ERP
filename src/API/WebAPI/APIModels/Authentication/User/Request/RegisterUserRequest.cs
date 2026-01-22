@@ -1,4 +1,4 @@
-﻿namespace WebAPI.DTOs.User.Request
+﻿namespace WebAPI.APIModels.Autentication.User.Request
 {
     public record RegisterUserRequest(
         string FirstName,
