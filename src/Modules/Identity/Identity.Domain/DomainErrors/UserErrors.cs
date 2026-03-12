@@ -30,5 +30,10 @@ namespace Identity.Domain.DomainErrors
             Error.Validation(
                 code: ErrorCodes.User.UserNotFound,
                 description: FeaturedMessage.UserNotFound);
+
+        public static  Error InvalidCredentials =>
+            Error.Validation(
+                code: ErrorCodes.User.InvalidCredentials, 
+                description: FeaturedMessage.UserInvalidCredentials);
     }
 }

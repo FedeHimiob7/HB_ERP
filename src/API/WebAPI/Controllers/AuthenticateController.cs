@@ -1,7 +1,11 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
 using Identity.Application.Users.Commands.RegisterUser;
+using Identity.Application.Users.Queries.GetUserById;
+using Identity.Application.Users.Queries.GetUsersPaged;
+using Identity.Application.Users.Queries.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebAPI.APIModels;
 using WebAPI.APIModels.Autentication.User.Request;
 using WebAPI.APIModels.Authentication.Role.Request;
 
@@ -53,6 +57,49 @@ namespace WebAPI.Controllers
             return result.Match(
                 id => Ok(id),
                 errors => Problem(errors)
+            );
+        }
+
+        [HttpGet("users/{id:guid}")]
+        public async Task<IActionResult> GetUserById(
+            Guid id, 
+            CancellationToken cancellationToken)
+        {
+            var query = new GetUserByIdQuery(id);
+            var result = await _mediator.Send(query, cancellationToken);
+
+            return result.Match(
+                user => Ok(user),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpPost("login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login(
+            [FromBody] LoginQuery request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(request, cancellationToken);
+
+            return result.Match(
+                token => Ok(new { Token = token }),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsersPaged(
+            [FromQuery] SearchParameters searchParameters,
+            CancellationToken cancellationToken = default)
+        {
+            var query = new GetUsersPagedQuery(searchParameters.Page, searchParameters.PageSize);
+
+            var result = await _mediator.Send(query, cancellationToken);
+
+            return result.Match(
+                pagedList => Ok(pagedList),
+                errors => Problem(errors.ToList())
             );
         }
     }

@@ -25,14 +25,11 @@ namespace WebAPI
 
 
             app.UseExceptionHandler("/error");
+            app.UseHttpsRedirection();
 
             app.UseAuthentication();   
 
-            app.UseAuthorization();
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
+            app.UseAuthorization();            
 
             app.MapControllers();
 

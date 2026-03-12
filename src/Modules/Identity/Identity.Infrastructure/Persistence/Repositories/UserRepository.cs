@@ -30,6 +30,8 @@ namespace Identity.Infrastructure.Persistence.Repositories
         public async Task<User?> GetByEmailAsync(string email)
         {
             var model = await _db.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(x => x.NormalizedEmail == email.ToUpper());
 
             return model is null ? null : UserMapper.ToDomain(model);
@@ -57,6 +59,26 @@ namespace Identity.Infrastructure.Persistence.Repositories
                 throw new InvalidOperationException("User not found in database");
 
             UserMapper.MapToExistingEntity(user, existing);
+        }
+
+        public async Task<(IReadOnlyList<User> Users, int TotalCount)> GetPagedAsync(
+                int pageNumber,
+                int pageSize,
+                CancellationToken cancellationToken)
+        {
+            var query = _db.Users.AsNoTracking();
+
+            int totalCount = await query.CountAsync(cancellationToken);
+            
+            var models = await query
+                .Include(u => u.UserRoles) 
+                .OrderBy(u => u.FirstName) 
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+            var domainUsers = models.Select(UserMapper.ToDomain).ToList();
+
+            return (domainUsers, totalCount);
         }
     }
 }

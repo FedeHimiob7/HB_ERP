@@ -22,6 +22,7 @@ namespace Identity.Domain.Common
         public const string UserFirstNameVacio = "El nombre no puede estar vacío.";
         public const string UserLastNameVacio = "El Apellido no puede estar vacío.";
         public const string UserNotFound = "Usuario no encontrado.";
+        public const string UserInvalidCredentials = "Credenciales inválidas.";
 
         // Roles
         public const string NombreDeRolYaRegistrado = "Este Nombre ya esta siendo utilizado.";

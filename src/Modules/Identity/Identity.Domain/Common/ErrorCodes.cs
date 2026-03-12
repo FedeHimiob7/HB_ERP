@@ -16,6 +16,7 @@ namespace Identity.Domain.Common
             public const string UserFirstNameEmpty = "User.EmptyFirstName";
             public const string UserLastNameEmpty = "User.EmptyLastName";
             public const string UserNotFound = "User.NotFound";
+            public const string InvalidCredentials = "User.InvalidCredentials";
         }
 
         public static class Role

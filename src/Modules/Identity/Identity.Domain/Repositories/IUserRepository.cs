@@ -14,5 +14,6 @@ namespace Identity.Domain
         Task<List<User>> GetAllAsync();
         Task UpdateAsync(User user);        
         Task AddAsync(User user);
+        Task<(IReadOnlyList<User> Users, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken);
     }
 }
