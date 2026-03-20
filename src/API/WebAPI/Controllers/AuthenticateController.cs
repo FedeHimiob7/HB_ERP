@@ -1,8 +1,10 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
+using Identity.Application.Users.Commands.DeleteUser;
 using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Application.Users.Queries.GetUserById;
 using Identity.Application.Users.Queries.GetUsersPaged;
 using Identity.Application.Users.Queries.Login;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.APIModels;
@@ -93,13 +95,26 @@ namespace WebAPI.Controllers
             [FromQuery] SearchParameters searchParameters,
             CancellationToken cancellationToken = default)
         {
-            var query = new GetUsersPagedQuery(searchParameters.Page, searchParameters.PageSize);
+            var query = new GetUsersPagedQuery(
+                searchParameters.Page, 
+                searchParameters.PageSize);
 
             var result = await _mediator.Send(query, cancellationToken);
 
             return result.Match(
                 pagedList => Ok(pagedList),
                 errors => Problem(errors.ToList())
+            );
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        {
+            var command = new DeleteUserCommand(id);
+            var result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                success => Ok(result),
+                errors => Problem(errors) 
             );
         }
     }

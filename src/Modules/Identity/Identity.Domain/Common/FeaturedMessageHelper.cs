@@ -1,5 +1,7 @@
 ﻿
 
+using System.ComponentModel;
+
 namespace Identity.Domain.Common
 {
     public static class FeaturedMessageHelper
@@ -15,6 +17,10 @@ namespace Identity.Domain.Common
 
     public static class FeaturedMessage
     {
+        public const string UsuarioCreadoExitosamente = "Usuario creado exitosamente.";
+        public const string UsuarioActualizadoExitosamente = "Usuario actualizado exitosamente.";
+        public const string IdInvalido = "Id Invalido";
+
         // Users
         public const string ErrorAlEjecutarOperacion = "Error al ejecutar la operación.";
         public const string EmailInvalido = "El email no tiene un formato válido.";
@@ -23,6 +29,7 @@ namespace Identity.Domain.Common
         public const string UserLastNameVacio = "El Apellido no puede estar vacío.";
         public const string UserNotFound = "Usuario no encontrado.";
         public const string UserInvalidCredentials = "Credenciales inválidas.";
+        public const string PasswordInvalido = "La contraseña debe contener al menos una letra, un número y un caracter especial.";
 
         // Roles
         public const string NombreDeRolYaRegistrado = "Este Nombre ya esta siendo utilizado.";

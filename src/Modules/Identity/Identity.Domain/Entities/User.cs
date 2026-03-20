@@ -106,7 +106,7 @@ namespace Identity.Domain
         {
             if (IsActive)
                 return;
-            IsActive = true;
+            IsActive = false;
             Raise(new UserDeactivatedDomainEvent(
                 Guid.NewGuid(),
                 Id

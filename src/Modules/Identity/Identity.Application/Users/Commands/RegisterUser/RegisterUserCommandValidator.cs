@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Identity.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,7 +27,7 @@ namespace Identity.Application.Users.Commands.RegisterUser
                 .NotEmpty()
                 .MinimumLength(8)            
                 .Matches(@"^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:<>|./?]).+$") //esto para q contenga al menos una letra, un número y un caracter especial
-                .WithMessage("La contraseña debe contener al menos una letra, un número y un caracter especial.");
+                .WithMessage(FeaturedMessage.PasswordInvalido);
         }
     }
 }

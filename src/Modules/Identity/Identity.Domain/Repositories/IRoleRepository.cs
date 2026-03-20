@@ -11,6 +11,8 @@ namespace Identity.Domain.Repositories
     public interface IRoleRepository
     {
         Task<Role?> GetByIdAsync(RoleId id);
+        Task UpdateAsync(Role role);
+        Task<List<Role>> GetAllAsync();
         Task AddAsync(Role role);
     }
 }
