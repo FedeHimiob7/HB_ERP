@@ -35,6 +35,14 @@ namespace Identity.Infrastructure.Persistence.Repositories
             await _db.Roles.AddAsync(entity);
         }
 
-        
+        public Task UpdateAsync(Role role)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Role>> GetAllAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

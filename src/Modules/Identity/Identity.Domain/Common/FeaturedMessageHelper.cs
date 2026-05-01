@@ -34,6 +34,13 @@ namespace Identity.Domain.Common
         // Roles
         public const string NombreDeRolYaRegistrado = "Este Nombre ya esta siendo utilizado.";
         public const string RoleNotFound = "Rol no encontrado.";
+
+        // System Actions
+
+        public const string NombreDeAccionYaRegistrado = "Este Nombre ya esta siendo utilizado.";
+        public const string ActionNotFound = "Acción no encontrada.";
+        public const string InvalidActionName = "El nombre de la acción es invalido.";
+
     }
 
     // Ejemplo de uso con parametros

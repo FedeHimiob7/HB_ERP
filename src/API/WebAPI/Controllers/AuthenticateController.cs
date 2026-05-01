@@ -1,4 +1,5 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
+using Identity.Application.SystemActions.Commands.Create;
 using Identity.Application.Users.Commands.DeleteUser;
 using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Application.Users.Queries.GetUserById;
@@ -7,9 +8,11 @@ using Identity.Application.Users.Queries.Login;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 using WebAPI.APIModels;
 using WebAPI.APIModels.Autentication.User.Request;
 using WebAPI.APIModels.Authentication.Role.Request;
+using WebAPI.APIModels.Authentication.SystemActions;
 
 namespace WebAPI.Controllers
 {
@@ -117,5 +120,28 @@ namespace WebAPI.Controllers
                 errors => Problem(errors) 
             );
         }
+
+
+        [HttpPost]
+        [Route("registerSystemAction")]
+        public async Task<IActionResult> Create(
+            [FromBody] CreateSystemActionRequest request,
+            CancellationToken cancellationToken)
+        {
+            var command = new CreateSystemActionCommand(
+                request.Name,
+                request.Description);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                systemActionId => Ok(new
+                {
+                    Id = systemActionId
+                }),
+                errors => Problem(errors) 
+            );
+        }
+
     }
 }

@@ -24,5 +24,11 @@ namespace Identity.Domain.Common
             public const string DuplicateRoleName = "Role.DuplicateRoleName";
             public const string RoleNotFound = "Role.NotFound";
         }
+        public static class SystemAction
+        {
+            public const string DuplicateActionName = "SystemAction.DuplicateActionName";
+            public const string ActionNotFound = "SystemAction.NotFound";
+            public const string InvalidActionName = "SystemAction.InvalidActionName";
+        }
     }
 }

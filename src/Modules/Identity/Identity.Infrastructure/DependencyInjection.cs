@@ -37,6 +37,8 @@ namespace Identity.Infrastructure
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             services.AddScoped<IUserEmailUniquenessChecker, UserEmailUniquenessChecker>();
             services.AddScoped<IRoleNameUniquenessChecker, RoleNameUniquenessChecker>();
+            services.AddScoped<ISystemActionRepository, SystemActionRepository>();
+
 
             services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();

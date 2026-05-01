@@ -18,6 +18,7 @@
     <Folder Include="Roles\Commands\DeleteRole\" />
     <Folder Include="Roles\Commands\UpdateRole\" />
     <Folder Include="Roles\Queries\GetRoleById\" />
+    <Folder Include="SystemActions\Queries\" />
   </ItemGroup>
 
   <ItemGroup>
