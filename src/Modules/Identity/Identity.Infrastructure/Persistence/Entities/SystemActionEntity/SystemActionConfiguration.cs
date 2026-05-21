@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Infrastructure.Persistence.Entities.SystemActionEntity
+namespace Identity.Infrastructure.Persistence.Entities
 {
     internal sealed class SystemActionConfiguration : IEntityTypeConfiguration<SystemActionEntity>
     {

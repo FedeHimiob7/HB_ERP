@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using WebAPI.APIModels;
 using WebAPI.APIModels.Autentication.User.Request;
-using WebAPI.APIModels.Authentication.Role.Request;
 using WebAPI.APIModels.Authentication.SystemActions;
+using WebAPI.APIModels.Role.Request;
 
 namespace WebAPI.Controllers
 {
@@ -47,23 +47,7 @@ namespace WebAPI.Controllers
                 errors => Problem(errors)
             );
         }
-
-        [HttpPost]
-        [Route("registerRole")]
-        [AllowAnonymous]
-        public async Task<IActionResult> RegisterRole(RegisterRoleRequest request)
-        {
-            var command = new RegisterRoleCommand(
-                request.Name
-            );
-
-            var result = await _mediator.Send(command);
-
-            return result.Match(
-                id => Ok(id),
-                errors => Problem(errors)
-            );
-        }
+        
 
         [HttpGet("users/{id:guid}")]
         public async Task<IActionResult> GetUserById(
@@ -121,27 +105,7 @@ namespace WebAPI.Controllers
             );
         }
 
-
-        [HttpPost]
-        [Route("registerSystemAction")]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateSystemActionRequest request,
-            CancellationToken cancellationToken)
-        {
-            var command = new CreateSystemActionCommand(
-                request.Name,
-                request.Description);
-
-            var result = await _mediator.Send(command, cancellationToken);
-
-            return result.Match(
-                systemActionId => Ok(new
-                {
-                    Id = systemActionId
-                }),
-                errors => Problem(errors) 
-            );
-        }
+        
 
     }
 }

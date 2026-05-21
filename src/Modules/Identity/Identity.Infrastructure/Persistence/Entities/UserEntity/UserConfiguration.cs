@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Identity.Infrastructure.Persistence
+namespace Identity.Infrastructure.Persistence.Entities
 {
     public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
     {

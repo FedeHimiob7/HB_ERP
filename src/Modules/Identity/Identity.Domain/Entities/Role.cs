@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using Identity.Domain.Events;
 using Identity.Domain.VO;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,11 @@ namespace Identity.Domain.Entities
     public sealed class Role : AggregateRoot<RoleId>
     {
         public string Name { get; private set; } = null!;
+
+        private readonly List<ActionsId> _actionIds = new();
+
+        public IReadOnlyCollection<ActionsId> ActionIds => _actionIds.AsReadOnly();
+
         public bool IsActive { get; private set; }
 
         private Role() { }
@@ -34,6 +40,32 @@ namespace Identity.Domain.Entities
         {
             Guard.Against.NullOrWhiteSpace(name);
             Name = name;
+        }
+
+        public void AssignAction(ActionsId actionId)
+        {
+            if (!_actionIds.Contains(actionId))
+            {
+                _actionIds.Add(actionId);
+
+                Raise(new ActionAssignedToRoleDomainEvent(
+                    Guid.NewGuid(),
+                    this.Id,
+                    actionId));
+            }
+        }
+
+        public void RevokeAction(ActionsId actionId)
+        {
+            if (_actionIds.Contains(actionId))
+            {
+                _actionIds.Remove(actionId);
+
+                Raise(new ActionRevokedFromRoleDomainEvent(
+                    Guid.NewGuid(),
+                    this.Id,
+                    actionId));
+            }
         }
 
         public void Activate() => IsActive = true;

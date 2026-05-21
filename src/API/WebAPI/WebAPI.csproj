@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="APIModels\Authentication\Role\Response\" />
+    <Folder Include="APIModels\Role\Response\" />
     <Folder Include="APIModels\Authentication\User\Response\" />
   </ItemGroup>
 

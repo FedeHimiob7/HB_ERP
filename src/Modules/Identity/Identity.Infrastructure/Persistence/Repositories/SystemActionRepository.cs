@@ -1,7 +1,7 @@
 ﻿using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
-using Identity.Infrastructure.Persistence.Entities.SystemActionEntity;
+using Identity.Infrastructure.Persistence.Entities;
 using Identity.Infrastructure.Persistence.Mappers;
 using Microsoft.EntityFrameworkCore;
 using System;

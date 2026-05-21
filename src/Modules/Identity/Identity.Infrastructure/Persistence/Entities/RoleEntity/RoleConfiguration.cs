@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Infrastructure.Persistence
+namespace Identity.Infrastructure.Persistence.Entities
 {
     public class RoleConfiguration : IEntityTypeConfiguration<RoleEntity>
     {
@@ -22,6 +22,11 @@ namespace Identity.Infrastructure.Persistence
             builder.HasMany(r => r.UserRoles)
                 .WithOne(ur => ur.Role)
                 .HasForeignKey(ur => ur.RoleId);
+
+            builder.HasMany(r => r.RoleActions)
+                .WithOne(ra => ra.Role) 
+                .HasForeignKey(ra => ra.RoleId) 
+                .OnDelete(DeleteBehavior.Cascade); 
         }
     }
 }

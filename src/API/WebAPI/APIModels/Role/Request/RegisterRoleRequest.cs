@@ -1,4 +1,4 @@
-﻿namespace WebAPI.APIModels.Authentication.Role.Request
+﻿namespace WebAPI.APIModels.Role.Request
 {
     public record RegisterRoleRequest (string Name);   
 }
