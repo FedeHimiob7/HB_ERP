@@ -7,5 +7,8 @@ using System.Threading.Tasks;
 
 namespace Identity.Domain
 {
-    public record DomainEvent(Guid Id) : INotification;
+    public abstract record DomainEvent(Guid Id) : INotification
+    {       
+        public DateTime OccurredOnUtc { get; protected set; } = DateTime.UtcNow;
+    }
 }

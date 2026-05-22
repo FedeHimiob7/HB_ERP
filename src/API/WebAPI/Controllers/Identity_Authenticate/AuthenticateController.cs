@@ -1,10 +1,10 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
 using Identity.Application.SystemActions.Commands.Create;
 using Identity.Application.Users.Commands.DeleteUser;
+using Identity.Application.Users.Commands.Login;
 using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Application.Users.Queries.GetUserById;
 using Identity.Application.Users.Queries.GetUsersPaged;
-using Identity.Application.Users.Queries.Login;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ using WebAPI.APIModels.Autentication.User.Request;
 using WebAPI.APIModels.Authentication.SystemActions;
 using WebAPI.APIModels.Role.Request;
 
-namespace WebAPI.Controllers
+namespace WebAPI.Controllers.Identity_Authenticate
 {
     [Authorize]
     [Route("api/[controller]")]
@@ -66,7 +66,7 @@ namespace WebAPI.Controllers
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login(
-            [FromBody] LoginQuery request,
+            [FromBody] LoginCommand request,
             CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(request, cancellationToken);

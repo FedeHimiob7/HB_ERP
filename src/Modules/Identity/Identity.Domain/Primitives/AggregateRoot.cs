@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Identity.Domain.Primitives;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,16 @@ using System.Threading.Tasks;
 
 namespace Identity.Domain
 {
-    public abstract class AggregateRoot<TId>
+    public abstract class AggregateRoot<TId> : IHasDomainEvents
     {
         private readonly List<DomainEvent> _domainEvents = new();
 
         public TId Id { get; protected set; } = default!;
 
-        public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents;
+        public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         protected AggregateRoot() { }
+
         protected AggregateRoot(TId id)
         {
             Id = id;

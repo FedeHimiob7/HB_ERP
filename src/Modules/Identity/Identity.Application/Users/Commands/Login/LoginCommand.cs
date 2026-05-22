@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Application.Users.Queries.Login
+namespace Identity.Application.Users.Commands.Login
 {
-    public record LoginQuery(
+    public record LoginCommand(
     string Email,
     string Password) : IRequest<ErrorOr<string>>;
 }

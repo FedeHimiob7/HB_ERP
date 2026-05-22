@@ -7,13 +7,18 @@ using System.Threading.Tasks;
 
 namespace Identity.Infrastructure.Persistence
 {
-    internal sealed class EfUnitOfWork : IUnitOfWork
+    public sealed class EfUnitOfWork : IUnitOfWork
     {
         private readonly IdentityDbContext _dbContext;
 
-        public EfUnitOfWork(IdentityDbContext dbContext) => _dbContext = dbContext;
+        public EfUnitOfWork(IdentityDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
 
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => _dbContext.SaveChangesAsync(cancellationToken);
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 }

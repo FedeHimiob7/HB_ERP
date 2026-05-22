@@ -9,15 +9,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Application.Users.Queries.Login
+namespace Identity.Application.Users.Commands.Login
 {
-    public sealed class LoginQueryHandler(
+    public sealed class LoginCommandHandler(
      IUserRepository userRepository,
      IPasswordHasher passwordHasher,
      IJwtTokenService jwtTokenService)
-     : IRequestHandler<LoginQuery, ErrorOr<string>>
+     : IRequestHandler<LoginCommand, ErrorOr<string>>
     {
-        public async Task<ErrorOr<string>> Handle(LoginQuery request, CancellationToken cancellationToken)
+        public async Task<ErrorOr<string>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
             
             var emailResult = Email.Create(request.Email);

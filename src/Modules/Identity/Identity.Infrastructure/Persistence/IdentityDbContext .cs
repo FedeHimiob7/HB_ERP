@@ -1,6 +1,7 @@
 ﻿using Identity.Domain;
 using Identity.Domain.VO;
 using Identity.Infrastructure.Persistence.Entities;
+using MassTransit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,10 @@ namespace Identity.Infrastructure.Persistence
             modelBuilder.HasDefaultSchema("HB_ERP");
 
             modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");
+
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
         }
 
         public DbSet<UserEntity> Users => Set<UserEntity>();

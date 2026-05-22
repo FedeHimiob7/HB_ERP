@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebAPI.APIModels.Authentication.SystemActions;
 using WebAPI.APIModels.Role.Request;
 
-namespace WebAPI.Controllers
+namespace WebAPI.Controllers.Identity_Authenticate
 {
     [Route("api/roles")]
     public sealed class RolesController : ApiController

@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Application.Users.Queries.Login
+namespace Identity.Application.Users.Commands.Login
 {
-    internal class LoginQueryValidator : AbstractValidator<LoginQuery>
+    internal class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
-        public LoginQueryValidator()
+        public LoginCommandValidator()
         {
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("El correo electrónico es obligatorio.")
