@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HB_ERP.SharedKernel.Domain;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

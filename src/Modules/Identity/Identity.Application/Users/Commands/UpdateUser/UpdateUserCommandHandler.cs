@@ -1,13 +1,7 @@
-﻿using Identity.Application.Common.Interfaces;
-using Identity.Application.Users.Commands.RegisterUser;
+﻿using HB_ERP.SharedKernel.Application.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.VO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Identity.Application.Users.Commands.UpdateUser
 {

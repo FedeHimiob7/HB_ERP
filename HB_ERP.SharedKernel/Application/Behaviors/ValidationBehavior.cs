@@ -1,6 +1,8 @@
-﻿
+﻿using ErrorOr;
+using FluentValidation;
+using MediatR;
 
-namespace Identity.Application.Common
+namespace HB_ERP.SharedKernel.Application.Behaviors
 {
     public class ValidationBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>

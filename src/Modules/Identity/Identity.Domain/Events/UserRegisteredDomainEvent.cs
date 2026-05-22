@@ -1,4 +1,5 @@
-﻿using Identity.Domain.VO;
+﻿using HB_ERP.SharedKernel.Domain;
+using Identity.Domain.VO;
 using System;
 using System.Collections.Generic;
 using System.Linq;

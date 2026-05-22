@@ -12,7 +12,7 @@ namespace WebAPI
 
             builder.Services.AddPresentation()
                             .AddIdentityInfrastructure(builder.Configuration)
-                            .AddApplication();
+                            .AddIdentityApplication();
 
             var app = builder.Build();
 

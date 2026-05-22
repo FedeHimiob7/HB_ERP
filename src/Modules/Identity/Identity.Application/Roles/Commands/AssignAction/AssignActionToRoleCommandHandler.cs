@@ -1,4 +1,5 @@
-﻿using Identity.Application.Common.Interfaces;
+﻿using HB_ERP.SharedKernel.Application.Interfaces;
+using Identity.Application.Common.Interfaces;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 using System;

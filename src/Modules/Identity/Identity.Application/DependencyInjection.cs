@@ -1,22 +1,18 @@
-﻿using Identity.Application.Common;
+﻿using HB_ERP.SharedKernel.Application.DependencyInjection;
+using Identity.Application.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Identity.Application
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddApplication(this IServiceCollection services)
+        public static IServiceCollection AddIdentityApplication(this IServiceCollection services)
         {
-            services.AddMediatR(config => {
-                config.RegisterServicesFromAssemblyContaining<ApplicationAssemblyReference>();
-            });
+            // Solo llamamos al método del SharedKernel y le pasamos el Assembly de este módulo
+            services.AddSharedApplicationLayer(typeof(ApplicationAssemblyReference).Assembly);
 
-            services.AddScoped(
-                typeof(IPipelineBehavior<,>),
-                typeof(ValidationBehavior<,>)
-            );
-
-            services.AddValidatorsFromAssemblyContaining<ApplicationAssemblyReference>();
+            // Si este módulo tiene dependencias únicas (ej. un servicio externo), las registras aquí abajo
+            // services.AddScoped<IIdentitySpecificService, IdentitySpecificService>();
 
             return services;
         }

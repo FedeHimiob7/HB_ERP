@@ -1,23 +1,19 @@
-﻿using Identity.Application.Common.Interfaces;
+﻿using HB_ERP.SharedKernel.Application.Interfaces;
+using HB_ERP.SharedKernel.Infrastructure.Interceptors;
+using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.Interface;
 using Identity.Domain.Repositories;
 using Identity.Infrastructure.Authentication;
 using Identity.Infrastructure.Persistence;
-using Identity.Infrastructure.Persistence.Interceptors;
 using Identity.Infrastructure.Persistence.Repositories;
 using Identity.Infrastructure.Security;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Identity.Infrastructure
 {

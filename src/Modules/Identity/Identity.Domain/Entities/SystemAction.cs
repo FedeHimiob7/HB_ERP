@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using Identity.Domain.Events;
 using Identity.Domain.VO;
 using System;

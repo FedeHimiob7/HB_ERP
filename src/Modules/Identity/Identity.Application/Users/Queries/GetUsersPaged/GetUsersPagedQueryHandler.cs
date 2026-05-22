@@ -1,4 +1,5 @@
-﻿using Identity.Application.Common.Models;
+﻿using HB_ERP.SharedKernel.Application.Pagination;
+using Identity.Application.Common.Models;
 using Identity.Domain;
 using System;
 using System.Collections.Generic;

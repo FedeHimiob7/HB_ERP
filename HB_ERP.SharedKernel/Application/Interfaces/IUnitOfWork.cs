@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Application.Common.Interfaces
+namespace HB_ERP.SharedKernel.Application.Interfaces
 {
     public interface IUnitOfWork
     {

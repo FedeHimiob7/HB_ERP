@@ -1,12 +1,7 @@
 ﻿using Ardalis.GuardClauses;
-using Identity.Domain.Entities;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using Identity.Domain.Events;
 using Identity.Domain.VO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Identity.Domain
 {

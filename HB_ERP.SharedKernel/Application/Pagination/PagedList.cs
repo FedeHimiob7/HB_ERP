@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Identity.Application.Common.Models
+namespace HB_ERP.SharedKernel.Application.Pagination
 {
     public record PagedList<T>(
     List<T> Items,
