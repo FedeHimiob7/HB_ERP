@@ -1,0 +1,16 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: hb_erp_rabbitmq
+    ports:
+      - "5672:5672"   # Puerto para la comunicación de los mensajes
+      - "15672:15672" # Puerto para el panel de administración (web)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - hb_erp_network
+
+networks:
+  hb_erp_network:
+    driver: bridge

@@ -1,4 +1,5 @@
 ﻿using ErrorOr;
+using HB_ERP.SharedKernel.Domain.Common;
 using Identity.Domain.Common;
 using System;
 using System.Collections.Generic;

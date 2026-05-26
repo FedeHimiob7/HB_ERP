@@ -52,8 +52,6 @@ namespace Identity.Domain.Entities
 
             Name = name;
             Description = description;
-
-            // Aquí también podrías disparar un SystemActionUpdatedDomainEvent
         }
 
         public void Activate() => IsActive = true;

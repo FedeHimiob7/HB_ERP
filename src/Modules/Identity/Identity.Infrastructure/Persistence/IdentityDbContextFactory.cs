@@ -14,7 +14,7 @@ namespace Identity.Infrastructure.Persistence
         {
             var optionsBuilder = new DbContextOptionsBuilder<IdentityDbContext>();
 
-            // Connection string de desarrollo
+            // Connection string de desarrollo (Considera mover esto a variables de entorno luego)
             var connectionString = "Server=DESKTOP-QAB7V8I;Database=HB_ERP;Integrated Security=True;Encrypt=False";
 
             optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
@@ -23,18 +23,7 @@ namespace Identity.Infrastructure.Persistence
                 sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "dbo");
             });
 
-            IPublisher dummyPublisher = new DummyPublisher();
-            return new IdentityDbContext(optionsBuilder.Options, dummyPublisher);
-        }
-
-        private class DummyPublisher : IPublisher
-        {
-            public Task Publish(object @event, CancellationToken cancellationToken = default)
-                => Task.CompletedTask;
-
-            public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
-                where TNotification : INotification
-                => Task.CompletedTask;
+            return new IdentityDbContext(optionsBuilder.Options);
         }
     }
 }

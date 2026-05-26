@@ -1,19 +1,25 @@
 ﻿using ErrorOr;
 using FluentValidation;
+using HB_ERP.SharedKernel.Extensions;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace HB_ERP.SharedKernel.Application.Behaviors
 {
     public class ValidationBehavior<TRequest, TResponse>
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
-    where TResponse : IErrorOr
+                : IPipelineBehavior<TRequest, TResponse>
+                where TRequest : IRequest<TResponse>
+                where TResponse : IErrorOr
     {
         private readonly IEnumerable<IValidator<TRequest>> _validators;
+        private readonly ILogger<ValidationBehavior<TRequest, TResponse>> _logger;
 
-        public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+        public ValidationBehavior(
+            IEnumerable<IValidator<TRequest>> validators,
+            ILogger<ValidationBehavior<TRequest, TResponse>> logger)
         {
             _validators = validators;
+            _logger = logger;
         }
 
         public async Task<TResponse> Handle(
@@ -40,6 +46,13 @@ namespace HB_ERP.SharedKernel.Application.Behaviors
             var errors = failures
                 .Select(f => Error.Validation(f.PropertyName, f.ErrorMessage))
                 .ToList();
+
+            
+            _logger.LogWithData(
+                LogLevel.Warning,
+                $"Validación rechazada en {typeof(TRequest).Name}",
+                new { Request = request, Errors = errors } 
+            );
 
             return (dynamic)ErrorOrFactory(errors);
         }

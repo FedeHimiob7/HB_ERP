@@ -1,4 +1,6 @@
-﻿using Identity.Domain;
+﻿using HB_ERP.SharedKernel.Domain.Primitives;
+using HB_ERP.SharedKernel.Infrastructure;
+using Identity.Domain;
 using Identity.Domain.VO;
 using Identity.Infrastructure.Persistence.Entities;
 using MassTransit;
@@ -12,58 +14,34 @@ namespace Identity.Infrastructure.Persistence
 {
     public sealed class IdentityDbContext : DbContext
     {
-        private readonly IPublisher _publisher;
-
-        public IdentityDbContext(DbContextOptions<IdentityDbContext> options, IPublisher publisher)
+        public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
             : base(options)
         {
-            _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
+            
+
+            modelBuilder.HasDefaultSchema("Identity");
+            modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");         
+
+            modelBuilder.Entity<OutboxMessage>(builder =>
+            {
+                builder.ToTable("OutboxMessages");
+                builder.HasKey(x => x.Id);
+            });
+
+
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.HasDefaultSchema("HB_ERP");
-
-            modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");
-
-            modelBuilder.AddInboxStateEntity();
-            modelBuilder.AddOutboxMessageEntity();
-            modelBuilder.AddOutboxStateEntity();
         }
 
+
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
         public DbSet<UserEntity> Users => Set<UserEntity>();
         public DbSet<RoleEntity> Roles => Set<RoleEntity>();
         public DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
-
-
-
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            var aggregates = ChangeTracker
-                .Entries()
-                .Where(e =>
-                    e.Entity != null &&
-                    e.Entity.GetType().BaseType is { IsGenericType: true } baseType &&
-                    baseType.GetGenericTypeDefinition() == typeof(AggregateRoot<>))
-                .Select(e => (AggregateRoot<object>)e.Entity)
-                .ToList();
-
-            var domainEvents = aggregates
-                .SelectMany(a => a.DomainEvents)
-                .ToList();
-
-            var result = await base.SaveChangesAsync(cancellationToken);
-
-            foreach (var domainEvent in domainEvents)
-                await _publisher.Publish(domainEvent, cancellationToken);
-
-            foreach (var aggregate in aggregates)
-                aggregate.ClearDomainEvents();
-
-            return result;
-        }
     }
 }

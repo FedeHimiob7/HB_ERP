@@ -1,5 +1,6 @@
 ﻿using HB_ERP.SharedKernel.Application.Interfaces;
 using HB_ERP.SharedKernel.Infrastructure.Interceptors;
+using Identity.Application;
 using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.Interface;
@@ -68,33 +69,6 @@ namespace Identity.Infrastructure
                 };
             });
 
-            services.AddMassTransit(x =>
-            {
-                // 1. Configuramos el Outbox para Entity Framework Core
-                x.AddEntityFrameworkOutbox<IdentityDbContext>(o =>
-                {
-                    // Le decimos que use SQL Server
-                    o.UseSqlServer();
-
-                    // ESTO ES EL WORKER: Le decimos a MassTransit que envíe los mensajes
-                    // guardados en la tabla hacia RabbitMQ en segundo plano automáticamente.
-                    o.UseBusOutbox();
-                });
-
-                // 2. Configuramos la conexión a RabbitMQ
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    // Configuración por defecto de RabbitMQ en local (Docker)
-                    cfg.Host("localhost", "/", h =>
-                    {
-                        h.Username("guest");
-                        h.Password("guest");
-                    });
-
-                    // Esto auto-configura las colas basado en los consumidores que creemos luego
-                    cfg.ConfigureEndpoints(context);
-                });
-            });
 
             return services;
         }

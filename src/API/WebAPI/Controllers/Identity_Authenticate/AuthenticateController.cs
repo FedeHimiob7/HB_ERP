@@ -10,9 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using WebAPI.APIModels;
-using WebAPI.APIModels.Autentication.User.Request;
-using WebAPI.APIModels.Authentication.SystemActions;
-using WebAPI.APIModels.Role.Request;
+using WebAPI.APIModels.Identity.Authentication.User.Request;
 
 namespace WebAPI.Controllers.Identity_Authenticate
 {
