@@ -2,8 +2,6 @@
 using MasterData.Domain.Entities;
 using MasterData.Domain.Repositories;
 using MasterData.Domain.VO;
-using MasterData.Infrastructure.Persistence.Entities.CurrencyEntity;
-using MasterData.Infrastructure.Persistence.Mappers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -24,50 +22,39 @@ namespace MasterData.Infrastructure.Persistence.Repositories
 
         public async Task<Currency?> GetByIdAsync(CurrencyId id, CancellationToken cancellationToken = default)
         {
-            var entity = await _dbContext.Set<CurrencyEntity>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Id == id.Value && e.IsActive, cancellationToken);
-
-            return entity is null ? null : CurrencyMapper.ToDomain(entity);
+            return await _dbContext.Currencies
+                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         }
 
         public async Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
         {
-            var entity = await _dbContext.Set<CurrencyEntity>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(e => e.Code == code && e.IsActive, cancellationToken);
-
-            return entity is null ? null : CurrencyMapper.ToDomain(entity);
-        }      
+            return await _dbContext.Currencies
+                .FirstOrDefaultAsync(e => e.Code == code, cancellationToken);
+        }
 
         public async Task<bool> ExistsByCodeAsync(string code, CancellationToken cancellationToken = default)
         {
-            return await _dbContext.Set<CurrencyEntity>()
-                .AsNoTracking()
+            return await _dbContext.Currencies
+                .AsNoTracking() 
                 .AnyAsync(e => e.Code == code, cancellationToken);
         }
 
         public async Task AddAsync(Currency currency, CancellationToken cancellationToken = default)
         {
-            var entity = CurrencyMapper.ToEntity(currency);
-            await _dbContext.Set<CurrencyEntity>().AddAsync(entity, cancellationToken);
+            await _dbContext.Currencies.AddAsync(currency, cancellationToken);
         }
 
         public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default)
         {
-            var entity = CurrencyMapper.ToEntity(currency);
-            _dbContext.Set<CurrencyEntity>().Update(entity);
+            _dbContext.Currencies.Update(currency);
             return Task.CompletedTask;
         }
 
         public async Task<List<Currency>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            var entities = await _dbContext.Set<CurrencyEntity>()
+        {           
+            return await _dbContext.Currencies
                 .AsNoTracking()
-                .Where(e => e.IsActive) 
                 .ToListAsync(cancellationToken);
-
-            return entities.Select(CurrencyMapper.ToDomain).ToList();
         }
 
         public async Task<(IReadOnlyList<Currency> Currencies, int TotalCount)> GetPagedAsync(
@@ -75,19 +62,15 @@ namespace MasterData.Infrastructure.Persistence.Repositories
             int pageSize,
             CancellationToken cancellationToken = default)
         {
-            var query = _dbContext.Set<CurrencyEntity>()
-                .AsNoTracking()
-                .Where(e => e.IsActive);
+            var query = _dbContext.Currencies.AsNoTracking();
 
             var totalCount = await query.CountAsync(cancellationToken);
 
-            var entities = await query
+            var currencies = await query
                 .OrderBy(c => c.Code)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
-
-            var currencies = entities.Select(CurrencyMapper.ToDomain).ToList();
 
             return (currencies, totalCount);
         }

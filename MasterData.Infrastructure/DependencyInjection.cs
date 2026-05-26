@@ -19,6 +19,7 @@ namespace MasterData.Infrastructure
                                     IConfiguration configuration)
         {
             // 1. Registramos el interceptor explícitamente para este módulo
+            services.AddScoped<UpdateAuditableEntitiesInterceptor>();
             services.AddScoped<PublishDomainEventsInterceptor>();
 
             services.AddDbContext<MasterDataDbContext>((serviceProvider, options) =>
@@ -33,10 +34,14 @@ namespace MasterData.Infrastructure
                 });
 
                 // NATIVO EF CORE: Le decimos que busque el interceptor en el Scope actual de la petición automáticamente
-                options.AddInterceptors(serviceProvider.GetRequiredService<PublishDomainEventsInterceptor>());
+                options.AddInterceptors(
+                            serviceProvider.GetRequiredService<UpdateAuditableEntitiesInterceptor>(),
+                            serviceProvider.GetRequiredService<PublishDomainEventsInterceptor>()
+    );
             });
 
             services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+            services.AddScoped<IProductServiceLineRepository, ProductServiceLineRepository>();
             services.AddScoped<IUnitOfWork, MasterDataEfUnitOfWork>();
             services.AddScoped<IOutboxRepository, OutboxRepository>();
 

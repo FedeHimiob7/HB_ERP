@@ -1,6 +1,7 @@
 ﻿using HB_ERP.SharedKernel.Application.Interfaces;
 using HB_ERP.SharedKernel.Infrastructure;
 using HB_ERP.SharedKernel.IntegrationEvents;
+using HB_ERP.SharedKernel.IntegrationEvents.MasterData.Currency;
 using MasterData.Application.Currencies.Commands.CreateCurrencie;
 using MasterData.Domain.Events;
 using MasterData.Domain.Repositories;

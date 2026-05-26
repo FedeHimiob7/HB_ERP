@@ -2,7 +2,7 @@
 
 namespace HB_ERP.SharedKernel.Domain.Primitives
 {
-    public abstract class AggregateRoot<TId> : IHasDomainEvents
+    public abstract class AggregateRoot<TId> : IHasDomainEvents, IAuditable
     {
         private readonly List<DomainEvent> _domainEvents = new();
 

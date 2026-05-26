@@ -1,4 +1,5 @@
-﻿using Serilog.Context;
+﻿using HB_ERP.SharedKernel.Domain.Primitives;
+using Serilog.Context;
 using System.Security.Claims;
 
 namespace WebAPI.Middlewares
@@ -12,12 +13,12 @@ namespace WebAPI.Middlewares
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, ICurrentUserProvider currentUserProvider)
         {
-            var userIdString = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdString = currentUserProvider.UserId;
 
             if (Guid.TryParse(userIdString, out Guid userId))
-            {                
+            {
                 using (LogContext.PushProperty("UserId", userId))
                 {
                     await _next(context);
@@ -25,7 +26,10 @@ namespace WebAPI.Middlewares
             }
             else
             {
-                await _next(context);
+                using (LogContext.PushProperty("UserId", "Anonymous"))
+                {
+                    await _next(context);
+                }
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿
+using HB_ERP.SharedKernel.Infrastructure;
 using Identity.Application;
 using Identity.Application.EventHandlers;
 using Identity.Infrastructure;
@@ -39,7 +40,8 @@ namespace WebAPI
                 builder.Host.UseSerilog();
 
                 // Registro de dependencias...
-                builder.Services.AddPresentation()
+                builder.Services.AddSharedKernelInfrastructure() 
+                                .AddPresentation()
                                 //Identity
                                 .AddIdentityInfrastructure(builder.Configuration)
                                 .AddIdentityApplication()
@@ -67,11 +69,8 @@ namespace WebAPI
                 builder.Services.AddHostedService<MasterDataOutboxPublisher>();
                 builder.Services.AddHostedService<IdentityOutboxPublisher>();
 
-                var app = builder.Build();
-                
-
-                app.UseMiddleware<UserLogMiddleware>();
-
+                var app = builder.Build();              
+                               
                 if (app.Environment.IsDevelopment())
                 {
                     app.UseSwagger();
@@ -81,6 +80,7 @@ namespace WebAPI
                 app.UseExceptionHandler("/error");
                 app.UseHttpsRedirection();
                 app.UseAuthentication();
+                app.UseMiddleware<UserLogMiddleware>();
                 app.UseAuthorization();
                 app.MapControllers();
 

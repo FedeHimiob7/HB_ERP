@@ -30,7 +30,6 @@ public sealed class PublishDomainEventsInterceptor : SaveChangesInterceptor
             .Select(entry => (IHasDomainEvents)entry.Entity)
             .ToList();
 
-        // 🛑 COLOCA UN BREAKPOINT AQUÍ: Mira si la variable 'entries' ahora sí captura la entidad Currency
         if (!entries.Any())
         {
             return;

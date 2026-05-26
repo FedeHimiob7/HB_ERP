@@ -1,5 +1,5 @@
 ﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using HB_ERP.SharedKernel.IntegrationEvents;
+using HB_ERP.SharedKernel.IntegrationEvents.MasterData.Currency;
 using Identity.Domain;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
