@@ -2,16 +2,9 @@
 using HB_ERP.SharedKernel.Domain.Primitives;
 using HB_ERP.SharedKernel.Infrastructure;
 using HB_ERP.SharedKernel.Infrastructure.Extensions;
-using MassTransit;
 using MasterData.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MasterData.Infrastructure.Persistence
 {
@@ -41,6 +34,9 @@ namespace MasterData.Infrastructure.Persistence
         public DbSet<OutboxMessage> OutboxMessages { get; set; }
         public DbSet<Currency> Currencies { get; set; }
         public DbSet<ProductServiceLine> ProductServiceLines { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<State> States { get; set; }
+        public DbSet<Domain.Entities.Unit> Units { get; set; }
 
 
     }

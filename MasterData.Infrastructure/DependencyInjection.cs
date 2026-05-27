@@ -40,10 +40,14 @@ namespace MasterData.Infrastructure
     );
             });
 
-            services.AddScoped<ICurrencyRepository, CurrencyRepository>();
-            services.AddScoped<IProductServiceLineRepository, ProductServiceLineRepository>();
-            services.AddScoped<IUnitOfWork, MasterDataEfUnitOfWork>();
             services.AddScoped<IOutboxRepository, OutboxRepository>();
+            services.AddScoped<IUnitOfWork, MasterDataEfUnitOfWork>();     
+
+
+            services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+            services.AddScoped<IProductServiceLineRepository, ProductServiceLineRepository>();                   
+            services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<IStateRepository, StateRepository>();
 
             return services;
         }
