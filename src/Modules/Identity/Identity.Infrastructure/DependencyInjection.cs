@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using HB_ERP.SharedKernel.Infrastructure.Interceptors;
+﻿using HB_ERP.SharedKernel.Infrastructure.Interceptors;
 using Identity.Application;
 using Identity.Application.Common.Interfaces;
 using Identity.Domain;
@@ -26,6 +25,7 @@ namespace Identity.Infrastructure
 
             services.AddDbContext<IdentityDbContext>((sp, options) =>
             {
+
                 options.UseSqlServer(config.GetConnectionString("DefaultConnection"),
                     sqlOptions =>
                     {
@@ -39,7 +39,7 @@ namespace Identity.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
 
-            services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+            services.AddScoped<IIdentityUnitOfWork, EfUnitOfWork>();
             services.AddScoped<IUserEmailUniquenessChecker, UserEmailUniquenessChecker>();
             services.AddScoped<IRoleNameUniquenessChecker, RoleNameUniquenessChecker>();
             services.AddScoped<ISystemActionRepository, SystemActionRepository>();

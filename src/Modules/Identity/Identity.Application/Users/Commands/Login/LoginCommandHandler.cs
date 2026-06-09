@@ -38,7 +38,7 @@ namespace Identity.Application.Users.Commands.Login
             {
                 return UserErrors.InvalidCredentials;
             }
-            var token = jwtTokenService.GenerateToken(user);
+            var token = await jwtTokenService.GenerateTokenAsync(user);
 
             return token;
         }

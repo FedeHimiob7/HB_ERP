@@ -1,4 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.VO;
@@ -9,12 +9,12 @@ namespace Identity.Application.Users.Commands.UpdateUser
         : IRequestHandler<UpdateUserCommand, ErrorOr<Guid>>
     {
         private readonly IUserRepository _userRepository;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IUserEmailUniquenessChecker _emailChecker;
 
         public UpdateUserCommandHandler(
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork,
+            IIdentityUnitOfWork unitOfWork,
             IUserEmailUniquenessChecker userEmailUniquenessChecker)
         {
             _userRepository = userRepository

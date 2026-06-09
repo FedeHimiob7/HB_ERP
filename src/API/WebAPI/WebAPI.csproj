@@ -20,15 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\MasterData.Application\MasterData.Application.csproj" />
-    <ProjectReference Include="..\..\..\MasterData.Infrastructure\MasterData.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\MasterData\MasterData.Application\MasterData.Application.csproj" />
+    <ProjectReference Include="..\..\Modules\MasterData\MasterData.Infrastructure\MasterData.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\..\Modules\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="APIModels\Identity\Role\Response\" />
-    <Folder Include="APIModels\Identity\Authentication\User\Response\" />
   </ItemGroup>
 
 </Project>

@@ -20,5 +20,7 @@ namespace Identity.Domain.DomainErrors
             Error.NotFound(
                 code: ErrorCodes.Role.RoleNotFound,
                 description: FeaturedMessage.RoleNotFound);
+
+        
     }
 }

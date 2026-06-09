@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using Identity.Application.Common.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Domain;
 using Identity.Domain.Common;
@@ -17,11 +16,11 @@ namespace Identity.Application.SystemActions.Commands.Create
     public sealed class CreateSystemActionCommandHandler : IRequestHandler<CreateSystemActionCommand, ErrorOr<Guid>>
 {
     private readonly ISystemActionRepository _systemActionRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IIdentityUnitOfWork _unitOfWork;
 
     public CreateSystemActionCommandHandler(
         ISystemActionRepository systemActionRepository,
-        IUnitOfWork unitOfWork)
+        IIdentityUnitOfWork unitOfWork)
     {
         _systemActionRepository = systemActionRepository;
         _unitOfWork = unitOfWork;

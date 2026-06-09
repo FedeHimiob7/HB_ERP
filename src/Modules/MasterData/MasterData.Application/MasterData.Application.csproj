@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\HB_ERP.SharedKernel\HB_ERP.SharedKernel.csproj" />
+    <ProjectReference Include="..\MasterData.Domain\MasterData.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

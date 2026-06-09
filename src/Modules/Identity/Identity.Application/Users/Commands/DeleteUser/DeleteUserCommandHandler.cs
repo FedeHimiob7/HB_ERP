@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using Identity.Application.Common.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.VO;
@@ -13,7 +12,7 @@ namespace Identity.Application.Users.Commands.DeleteUser
 {
     internal sealed class DeleteUserCommandHandler(
     IUserRepository _userRepository,
-    IUnitOfWork _unitOfWork)
+    IIdentityUnitOfWork _unitOfWork)
     : IRequestHandler<DeleteUserCommand, ErrorOr<Success>>
     {
         public async Task<ErrorOr<Success>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)

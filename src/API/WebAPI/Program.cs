@@ -69,6 +69,19 @@ namespace WebAPI
                 builder.Services.AddHostedService<MasterDataOutboxPublisher>();
                 builder.Services.AddHostedService<IdentityOutboxPublisher>();
 
+                var origenesPermitidos = builder.Configuration.GetValue<string>("origenesPermitidos")!.Split(",");
+
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowAll",
+                        policy =>
+                        {
+                            policy.WithOrigins(origenesPermitidos)
+                                  .AllowAnyMethod()
+                                  .AllowAnyHeader();
+                        });
+                });
+
                 var app = builder.Build();              
                                
                 if (app.Environment.IsDevelopment())
@@ -79,6 +92,9 @@ namespace WebAPI
 
                 app.UseExceptionHandler("/error");
                 app.UseHttpsRedirection();
+
+
+                app.UseCors("AllowAll");
                 app.UseAuthentication();
                 app.UseMiddleware<UserLogMiddleware>();
                 app.UseAuthorization();

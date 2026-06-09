@@ -1,5 +1,5 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using HB_ERP.SharedKernel.IntegrationEvents.MasterData.Currency;
+﻿using HB_ERP.SharedKernel.IntegrationEvents.MasterData.Currency;
+using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
@@ -18,12 +18,12 @@ namespace Identity.Application.EventHandlers
     {
         private readonly ILogger<CurrencyCreatedConsumer> _logger;
         private readonly IRoleRepository _roleRepository;
-        private readonly IUnitOfWork _unitOfWork; // <-- 1. Inyectamos el UnitOfWork
+        private readonly IIdentityUnitOfWork _unitOfWork; // <-- 1. Inyectamos el UnitOfWork
 
         public CurrencyCreatedConsumer(
             ILogger<CurrencyCreatedConsumer> logger,
             IRoleRepository roleRepository,
-            IUnitOfWork unitOfWork)
+            IIdentityUnitOfWork unitOfWork)
         {
             _logger = logger;
             _roleRepository = roleRepository;

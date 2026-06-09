@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using Identity.Application.Common.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.Interface;
@@ -11,13 +10,13 @@ namespace Identity.Application.Users.Commands.RegisterUser
     : IRequestHandler<RegisterUserCommand, ErrorOr<Guid>>
     {
         private readonly IUserRepository _userRepository;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IUserEmailUniquenessChecker _emailChecker;
         private readonly IPasswordHasher _passwordHasher;
 
         public RegisterUserCommandHandler(
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork,
+            IIdentityUnitOfWork unitOfWork,
             IUserEmailUniquenessChecker userEmailUniquenessChecker,
             IPasswordHasher passwordHasher)
         {

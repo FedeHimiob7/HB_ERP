@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using Identity.Application.Common.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 using System;
@@ -13,11 +12,11 @@ namespace Identity.Application.Roles.Commands.AssignAction
     public sealed class AssignActionToRoleCommandHandler : IRequestHandler<AssignActionToRoleCommand, ErrorOr<Success>>
     {
         private readonly IRoleRepository _roleRepository;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IIdentityUnitOfWork _unitOfWork;
 
         public AssignActionToRoleCommandHandler(
             IRoleRepository roleRepository,
-            IUnitOfWork unitOfWork)
+            IIdentityUnitOfWork unitOfWork)
         {
             _roleRepository = roleRepository;
             _unitOfWork = unitOfWork;

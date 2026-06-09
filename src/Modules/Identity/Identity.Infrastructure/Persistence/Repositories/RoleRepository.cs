@@ -37,20 +37,18 @@ namespace Identity.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(Role role, CancellationToken cancellationToken = default)
         {
-            // 1. Traemos la entidad de la BD con Tracking habilitado
+           
             var existingEntity = await _db.Set<RoleEntity>()
                 .Include(r => r.RoleActions)
                 .FirstOrDefaultAsync(r => r.Id == role.Id.Value, cancellationToken);
 
             if (existingEntity == null) return;
 
-            // 2. Actualizamos propiedades planas
+           
             existingEntity.Name = role.Name;
 
-            // 3. Sincronizar la colección de acciones
             var incomingActionIds = role.ActionIds.Select(a => a.Value).ToList();
 
-            // A. Eliminar las que ya no están en el dominio
             var actionsToRemove = existingEntity.RoleActions
                 .Where(ra => !incomingActionIds.Contains(ra.ActionId))
                 .ToList();
@@ -60,7 +58,6 @@ namespace Identity.Infrastructure.Persistence.Repositories
                 existingEntity.RoleActions.Remove(actionToRemove);
             }
 
-            // B. Agregar las nuevas que vienen del dominio
             var existingActionIds = existingEntity.RoleActions.Select(ra => ra.ActionId).ToList();
             var newActionIds = incomingActionIds.Except(existingActionIds);
 
@@ -77,6 +74,40 @@ namespace Identity.Infrastructure.Persistence.Repositories
         public Task<List<Role>> GetAllAsync()
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<RoleId>> GetExistingIdsAsync(IEnumerable<Guid> roleIds, CancellationToken cancellationToken = default)
+        {
+            
+            var ids = roleIds.ToList();
+
+            var existingIds = await _db.Set<RoleEntity>()
+                .Where(r => ids.Contains(r.Id))
+                .Select(r => r.Id)
+                .ToListAsync(cancellationToken);
+
+            return existingIds.Select(RoleId.Create).ToList();
+        }
+
+        public async Task<(IReadOnlyList<Role> roles, int totalCount)> GetPagedAsync(
+                int pageNumber,
+                int pageSize,
+                CancellationToken cancellationToken)
+        {
+            var query = _db.Roles.AsNoTracking();
+
+            int totalCount = await query.CountAsync(cancellationToken);
+
+            var models = await query
+                .Include(x => x.RoleActions)
+                .OrderBy(u => u.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            var domainRoles = models.Select(RoleMapper.ToDomain).ToList();
+
+            return (domainRoles, totalCount);
         }
     }
 }

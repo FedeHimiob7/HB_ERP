@@ -1,20 +1,23 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
 using Identity.Application.SystemActions.Commands.Create;
+using Identity.Application.Users.Commands.AssignRoleToUser;
 using Identity.Application.Users.Commands.DeleteUser;
 using Identity.Application.Users.Commands.Login;
 using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Application.Users.Queries.GetUserById;
 using Identity.Application.Users.Queries.GetUsersPaged;
+using Identity.Domain.VO;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection;
 using WebAPI.APIModels;
-using WebAPI.APIModels.Identity.Authentication.User.Request;
+using WebAPI.APIModels.Identity.Authentication.User;
 
 namespace WebAPI.Controllers.Identity_Authenticate
 {
     [Authorize]
+    [ApiController]
     [Route("api/[controller]")]
     public class AuthenticateController : ApiController
     {
@@ -45,11 +48,11 @@ namespace WebAPI.Controllers.Identity_Authenticate
                 errors => Problem(errors)
             );
         }
-        
+
 
         [HttpGet("users/{id:guid}")]
         public async Task<IActionResult> GetUserById(
-            Guid id, 
+            Guid id,
             CancellationToken cancellationToken)
         {
             var query = new GetUserByIdQuery(id);
@@ -81,7 +84,7 @@ namespace WebAPI.Controllers.Identity_Authenticate
             CancellationToken cancellationToken = default)
         {
             var query = new GetUsersPagedQuery(
-                searchParameters.Page, 
+                searchParameters.Page,
                 searchParameters.PageSize);
 
             var result = await _mediator.Send(query, cancellationToken);
@@ -99,11 +102,20 @@ namespace WebAPI.Controllers.Identity_Authenticate
             var result = await _mediator.Send(command, cancellationToken);
             return result.Match(
                 success => Ok(result),
-                errors => Problem(errors) 
+                errors => Problem(errors)
             );
         }
 
-        
+        [HttpPost("{id:guid}/Roles")]
+        public async Task<IActionResult> AssignRoleToUser(Guid id, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+        {
+            var command = new AssignRoleToUserCommand(id, request.RoleIds);
+            var result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                success => Ok(new { Message = "El rol fue asignado al usuario correctamente." }),
+                errors => Problem(errors)
+            );
 
+        }
     }
 }

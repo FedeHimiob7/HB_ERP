@@ -1,5 +1,4 @@
-﻿using HB_ERP.SharedKernel.Application.Interfaces;
-using Identity.Application.Common.Interfaces;
+﻿using Identity.Application.Common.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Identity.Infrastructure.Persistence
 {
-    public sealed class EfUnitOfWork : IUnitOfWork
+    public sealed class EfUnitOfWork : IIdentityUnitOfWork
     {
         private readonly IdentityDbContext _dbContext;
 
