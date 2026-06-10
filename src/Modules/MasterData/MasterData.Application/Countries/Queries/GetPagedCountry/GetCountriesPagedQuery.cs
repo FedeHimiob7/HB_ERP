@@ -11,6 +11,7 @@ namespace MasterData.Application.Countries.Queries.GetPagedCountry
 {
     public record GetCountriesPagedQuery(
     int PageNumber,
-    int PageSize
+    int PageSize,
+    string? SearchTerm = null
 ) : IRequest<ErrorOr<PagedCountriesResult>>;
 }

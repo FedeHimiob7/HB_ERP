@@ -2,6 +2,7 @@
 using MasterData.Application.Countries.Commands.DeleteCountry;
 using MasterData.Application.Countries.Commands.UpdateCountry;
 using MasterData.Application.Countries.Models;
+using MasterData.Application.Countries.Queries.GetAllCountries;
 using MasterData.Application.Countries.Queries.GetCountryById;
 using MasterData.Application.Countries.Queries.GetPagedCountry;
 using Microsoft.AspNetCore.Authorization;
@@ -75,17 +76,32 @@ namespace WebAPI.Controllers.MasterData
             );
         }
 
-        [HttpGet]
+        [HttpGet("paged")]
         public async Task<IActionResult> GetPaged(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
-            var query = new GetCountriesPagedQuery(pageNumber, pageSize);
+            var query = new GetCountriesPagedQuery(pageNumber, pageSize, searchTerm);
             var result = await _sender.Send(query, cancellationToken);
 
             return result.Match(
                 pagedResult => Ok(pagedResult),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        {
+            // Se instancia la query sin parámetros
+            var query = new GetAllCountriesQuery();
+
+            var result = await _sender.Send(query, cancellationToken);
+
+            return result.Match(
+                countries => Ok(countries),
                 errors => Problem(errors)
             );
         }

@@ -27,6 +27,7 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetPaged
             var (lines, totalCount) = await _repository.GetPagedAsync(
                 request.PageNumber,
                 request.PageSize,
+                request.SearchTerm,
                 cancellationToken);
 
             var mappedItems = lines.Select(psl => new ProductServiceLineResponse(

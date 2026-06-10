@@ -54,9 +54,13 @@ namespace MasterData.Infrastructure.Persistence.Repositories
         public async Task<(IReadOnlyList<Country> Countries, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
             var query = _dbContext.Countries.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                query = query.Where(c => c.Name.Contains(searchTerm));
 
             var totalCount = await query.CountAsync(cancellationToken);
 

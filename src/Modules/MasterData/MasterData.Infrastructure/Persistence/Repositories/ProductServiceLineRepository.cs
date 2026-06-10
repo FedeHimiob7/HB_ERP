@@ -45,14 +45,23 @@ namespace MasterData.Infrastructure.Persistence.Repositories
         public async Task<(IReadOnlyList<ProductServiceLine> ProductServiceLines, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
             var query = _dbContext.ProductServiceLines.AsNoTracking();
 
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(p =>
+                    p.Name.ToLower().Contains(term) ||
+                    p.Description.ToLower().Contains(term));
+            }
+
             var totalCount = await query.CountAsync(cancellationToken);
 
             var psls = await query
-                .OrderBy(p => p.Name) 
+                .OrderBy(p => p.Name)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);

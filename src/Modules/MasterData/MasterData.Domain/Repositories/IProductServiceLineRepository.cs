@@ -15,6 +15,7 @@ namespace MasterData.Domain.Repositories
         Task<(IReadOnlyList<ProductServiceLine> ProductServiceLines, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            string? searchTerm = null,
             CancellationToken cancellationToken = default);
         Task AddAsync(ProductServiceLine productServiceLine, CancellationToken cancellationToken = default);
         Task UpdateAsync(ProductServiceLine productServiceLine, CancellationToken cancellationToken = default);

@@ -1,13 +1,9 @@
 ﻿using HB_ERP.SharedKernel.Infrastructure;
 using MasterData.Domain.Entities;
 using MasterData.Domain.Repositories;
+using MasterData.Domain.SearchParametersModel;
 using MasterData.Domain.VO;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MasterData.Infrastructure.Persistence.Repositories
 {
@@ -58,18 +54,26 @@ namespace MasterData.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(IReadOnlyList<Currency> Currencies, int TotalCount)> GetPagedAsync(
-            int pageNumber,
-            int pageSize,
+            CurrencyFilter filter,
             CancellationToken cancellationToken = default)
         {
             var query = _dbContext.Currencies.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.ToLower();
+                query = query.Where(c =>
+                    c.Code.ToLower().Contains(term) ||
+                    c.Name.ToLower().Contains(term) ||
+                    c.Symbol.ToLower().Contains(term));
+            }
 
             var totalCount = await query.CountAsync(cancellationToken);
 
             var currencies = await query
                 .OrderBy(c => c.Code)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
                 .ToListAsync(cancellationToken);
 
             return (currencies, totalCount);

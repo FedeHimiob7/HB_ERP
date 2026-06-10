@@ -27,6 +27,7 @@ namespace MasterData.Application.Countries.Queries.GetPagedCountry
             var (countries, totalCount) = await _repository.GetPagedAsync(
                 request.PageNumber,
                 request.PageSize,
+                request.SearchTerm,
                 cancellationToken);
 
             var mappedItems = countries.Select(c => new CountryResponse(

@@ -16,8 +16,8 @@ namespace Identity.Infrastructure.Authentication
     internal sealed class JwtTokenService : IJwtTokenService
     {
         private readonly JwtOptions _options;
-        private readonly IdentityDbContext _context; 
-        
+        private readonly IdentityDbContext _context;
+
         public JwtTokenService(IOptions<JwtOptions> options, IdentityDbContext context)
         {
             _options = options.Value;
@@ -29,27 +29,35 @@ namespace Identity.Infrastructure.Authentication
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            
+
             var claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, user.Id.Value.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email.Value),
-                new(JwtRegisteredClaimNames.UniqueName, user.FirstName)  
+                new(JwtRegisteredClaimNames.UniqueName, user.FirstName)
             };
 
-            
+
             var userRoleIds = user.Roles.Select(r => r.Value).ToList();
 
-            
-            var permissions = await _context.Set<RoleActionEntity>()
-                .Where(ra => userRoleIds.Contains(ra.RoleId)) 
-                .Select(ra => ra.SystemAction)
-                .Where(sa => sa != null && sa.IsActive)       
-                .Select(sa => sa.Name)                        
-                .Distinct()                                   
-                .ToListAsync();                               
+            var roleNames = await _context.Roles
+                .Where(r => userRoleIds.Contains(r.Id))
+                .Select(r => r.Name)
+                .ToListAsync();
 
-            
+            foreach (var roleName in roleNames)
+            {
+                claims.Add(new Claim("roles", roleName));
+            }
+
+            var permissions = await _context.Set<RoleActionEntity>()
+                .Where(ra => userRoleIds.Contains(ra.RoleId))
+                .Select(ra => ra.SystemAction)
+                .Where(sa => sa != null && sa.IsActive)
+                .Select(sa => sa.Name)
+                .Distinct()
+                .ToListAsync();
+
             foreach (var permissionName in permissions)
             {
                 claims.Add(new Claim("permissions", permissionName));

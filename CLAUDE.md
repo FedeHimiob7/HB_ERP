@@ -25,11 +25,11 @@ Each module has its own `DbContext` and migration history. Always specify both `
 ```bash
 # Identity module
 dotnet ef migrations add <Name> --project src/Modules/Identity/Identity.Infrastructure --startup-project src/API/WebAPI
-dotnet ef database update            --project src/Modules/Identity/Identity.Infrastructure --startup-project src/API/WebAPI
+dotnet ef database update        --project src/Modules/Identity/Identity.Infrastructure --startup-project src/API/WebAPI
 
 # MasterData module
-dotnet ef migrations add <Name> --project MasterData.Infrastructure --startup-project src/API/WebAPI
-dotnet ef database update            --project MasterData.Infrastructure --startup-project src/API/WebAPI
+dotnet ef migrations add <Name> --project src/Modules/MasterData/MasterData.Infrastructure --startup-project src/API/WebAPI
+dotnet ef database update        --project src/Modules/MasterData/MasterData.Infrastructure --startup-project src/API/WebAPI
 ```
 
 ## Architecture
@@ -74,19 +74,41 @@ Modules do **not** reference each other directly. Communication is async:
 ### Solution layout
 ```
 src/
-  API/WebAPI/                        ← Entry point; Program.cs wires all modules
-  Modules/Identity/
-    Identity.Domain/
-    Identity.Application/
-    Identity.Infrastructure/
-    Identity.Integration/            ← MassTransit consumers for incoming events
-    Identity.Shared/                 ← DTOs shared with API
-  SharedKernel/Utils/
-HB_ERP.SharedKernel/                 ← DDD primitives, interceptors, integration events
-MasterData.Domain/
-MasterData.Application/
-MasterData.Infrastructure/
+  API/WebAPI/                         ← Entry point; Program.cs wires all modules
+  Modules/
+    Identity/
+      Identity.Domain/                ← User, Role, SystemAction entities + VOs + domain events
+      Identity.Application/           ← CQRS handlers, validators, login, JWT interface
+      Identity.Infrastructure/        ← IdentityDbContext, repositories, JwtTokenService, Pbkdf2PasswordHasher
+      Identity.Integration/           ← MassTransit consumers for incoming events
+      Identity.Shared/                ← DTOs shared with API
+    MasterData/
+      MasterData.Domain/              ← Currency, ProductServiceLine, Country, State, Unit entities
+      MasterData.Application/         ← CQRS handlers and validators per entity
+      MasterData.Infrastructure/      ← MasterDataDbContext, repositories, migrations
+HB_ERP.SharedKernel/                  ← DDD primitives, interceptors, integration events
+tests/
 ```
+
+### Identity module — entities
+| Entity | Description |
+|--------|-------------|
+| `User` | Usuario del sistema; tiene roles, password hash, estado activo |
+| `Role` | Rol asignable a usuarios; agrupa SystemActions |
+| `SystemAction` | Permiso granular (ej. `"products.create"`); se asigna a roles |
+
+El JWT generado incluye claims: `sub` (userId), `email`, `unique_name` (firstName), `roles[]`, `permissions[]`.
+
+### MasterData module — entities
+| Entity | Description |
+|--------|-------------|
+| `Currency` | Moneda (código ISO, símbolo, nombre) |
+| `ProductServiceLine` | Línea de producto/servicio |
+| `Country` | País; tiene estados/provincias |
+| `State` | Estado/provincia; siempre vinculado a un `Country` |
+| `Unit` | Unidad de medida |
+
+Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`).
 
 ## Key packages
 | Package | Purpose |
@@ -95,7 +117,7 @@ MasterData.Infrastructure/
 | ErrorOr 2 | Result type — use instead of exceptions for business errors |
 | FluentValidation 12 | Command/query validation via MediatR pipeline |
 | MassTransit 9 + RabbitMQ | Async integration events |
-| EF Core 9 | ORM; two separate DbContexts (Identity schema, MasterData schema) |
+| EF Core 9 | ORM; two separate DbContexts (`IdentityDbContext`, `MasterDataDbContext`) |
 | Ardalis.GuardClauses | Input guards in domain constructors |
 | RT.Comb | Sequential GUIDs for PKs |
 | Serilog | Structured logging; writes to SQL Server (`LogErrorHB_ERP` DB) |

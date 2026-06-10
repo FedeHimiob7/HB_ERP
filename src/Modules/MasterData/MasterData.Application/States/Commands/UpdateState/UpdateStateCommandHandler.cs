@@ -46,6 +46,9 @@ namespace MasterData.Application.States.Commands.UpdateState
                     return StateErrors.InvalidCountry;
             }
 
+            if (request.Code != state.Code && await _stateRepository.ExistsByCodeAsync(request.Code, cancellationToken))
+                return StateErrors.DuplicateCode;
+
             var updateResult = state.UpdateDetails(countryId, request.Code, request.Name);
             if (updateResult.IsError)
                 return updateResult.Errors;

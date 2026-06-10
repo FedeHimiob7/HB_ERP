@@ -1,10 +1,6 @@
 ﻿using MasterData.Domain.Entities;
+using MasterData.Domain.SearchParametersModel;
 using MasterData.Domain.VO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MasterData.Domain.Repositories
 {
@@ -14,8 +10,7 @@ namespace MasterData.Domain.Repositories
         Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
         Task<List<Currency>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<(IReadOnlyList<Currency> Currencies, int TotalCount)> GetPagedAsync(
-            int pageNumber,
-            int pageSize,
+            CurrencyFilter filter,
             CancellationToken cancellationToken = default);
         Task AddAsync(Currency currency, CancellationToken cancellationToken = default);
         Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default);

@@ -15,6 +15,7 @@ namespace MasterData.Domain.Repositories
         Task<(IReadOnlyList<Country> Countries, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            string? searchTerm = null,
             CancellationToken cancellationToken = default);
         Task AddAsync(Country country, CancellationToken cancellationToken = default);
         Task UpdateAsync(Country country, CancellationToken cancellationToken = default);

@@ -2,6 +2,7 @@
 using MasterData.Application.ProductServiceLines.Commands.DesactivatePSL;
 using MasterData.Application.ProductServiceLines.Commands.UpdatePSL;
 using MasterData.Application.ProductServiceLines.Models;
+using MasterData.Application.ProductServiceLines.Queries.GetAll;
 using MasterData.Application.ProductServiceLines.Queries.GetById;
 using MasterData.Application.ProductServiceLines.Queries.GetPaged;
 using Microsoft.AspNetCore.Authorization;
@@ -80,12 +81,23 @@ namespace WebAPI.Controllers.MasterData
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        {
+            var query = new GetAllProductServiceLinesQuery();
+            var result = await _sender.Send(query, cancellationToken);
+
+            return result.Match(
+                lines => Ok(lines),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpGet("paged")]
         public async Task<IActionResult> GetPaged(
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10,
+            [FromQuery] GetProductServiceLinesPagedRequest request,
             CancellationToken cancellationToken = default)
         {
-            var query = new GetProductServiceLinesPagedQuery(pageNumber, pageSize);
+            var query = new GetProductServiceLinesPagedQuery(request.PageNumber, request.PageSize, request.SearchTerm);
 
             var result = await _sender.Send(query, cancellationToken);
 

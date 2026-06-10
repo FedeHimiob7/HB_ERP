@@ -11,6 +11,7 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetPaged
 {
     public record GetProductServiceLinesPagedQuery(
     int PageNumber,
-    int PageSize
+    int PageSize,
+    string? SearchTerm = null
 ) : IRequest<ErrorOr<PagedProductServiceLinesResult>>;
 }

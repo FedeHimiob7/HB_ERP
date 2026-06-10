@@ -79,10 +79,11 @@ namespace MasterData.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
             {
-                var searchTerm = filter.SearchTerm.ToLower();
+                var term = filter.SearchTerm.ToLower();
                 query = query.Where(s =>
-                    s.Name.ToLower().Contains(searchTerm) ||
-                    s.Code.ToLower().Contains(searchTerm));
+                    s.Name.ToLower().Contains(term) ||
+                    s.Code.ToLower().Contains(term) ||
+                    _dbContext.Countries.Any(c => c.Id == s.CountryId && c.Name.ToLower().Contains(term)));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);

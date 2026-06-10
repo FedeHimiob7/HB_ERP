@@ -4,6 +4,8 @@ using MasterData.Application.Currencies.Commands.DeactivateCurrency;
 using MasterData.Application.Currencies.Commands.UpdateCurrency;
 using MasterData.Application.Currencies.Queries.GetCurrencies;
 using MasterData.Application.Currencies.Queries.GetCurrencyById;
+using MasterData.Application.Currencies.Queries.GetPaged;
+using MasterData.Domain.SearchParametersModel;
 using Microsoft.AspNetCore.Authorization;
 using WebAPI.APIModels.MasterData.Currencies;
 
@@ -35,6 +37,21 @@ namespace WebAPI.Controllers.MasterData
                 {
                     Id = currencyId,
                 }),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged(
+            [FromQuery] GetCurrenciesPagedRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var filter = new CurrencyFilter(request.PageNumber, request.PageSize, request.SearchTerm);
+            var query = new GetCurrenciesPagedQuery(filter);
+            var result = await _sender.Send(query, cancellationToken);
+
+            return result.Match(
+                pagedResult => Ok(pagedResult),
                 errors => Problem(errors)
             );
         }

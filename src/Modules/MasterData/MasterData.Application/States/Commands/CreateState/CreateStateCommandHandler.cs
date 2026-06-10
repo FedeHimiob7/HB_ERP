@@ -38,6 +38,11 @@ namespace MasterData.Application.States.Commands.CreateState
             if (country is null)
                 return StateErrors.InvalidCountry;
 
+            var borrar = await _stateRepository.ExistsByCodeAsync(request.Code, cancellationToken);
+
+            if (await _stateRepository.ExistsByCodeAsync(request.Code, cancellationToken))
+                return StateErrors.DuplicateCode;
+
             var createResult = State.Create(countryId, request.Code, request.Name);
 
             if (createResult.IsError)

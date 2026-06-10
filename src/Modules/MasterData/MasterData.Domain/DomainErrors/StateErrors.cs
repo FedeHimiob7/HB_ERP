@@ -24,5 +24,9 @@ namespace MasterData.Domain.DomainErrors
         public static Error NotFound => Error.NotFound(
             code: "State.NotFound",
             description: "El estado o provincia solicitado no existe.");
+
+        public static Error DuplicateCode => Error.Conflict(
+            code: "State.DuplicateCode",
+            description: "Ya existe un estado con ese código.");
     }
 }

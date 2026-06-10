@@ -8,8 +8,13 @@ namespace WebAPI.Controllers
         [ApiExplorerSettings(IgnoreApi = true)]
         [Route("/error")]
         public IActionResult Error()
-        {            
-            return Problem();
+        {
+            var exception = HttpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+            return Problem(
+                statusCode: 500,
+                title: "Ocurrió un error interno en el servidor.",
+                detail: exception?.Message);
         }
     }
 }

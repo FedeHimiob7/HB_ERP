@@ -8,6 +8,6 @@ namespace MasterData.Application.ProductServiceLines.Models
 {  
     public record ProductServiceLineResponse(
     Guid Id,
-    string description,
+    string Description,
     string Name);
 }

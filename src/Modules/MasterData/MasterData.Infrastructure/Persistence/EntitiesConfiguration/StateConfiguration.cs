@@ -34,7 +34,6 @@ namespace MasterData.Infrastructure.Persistence.EntitiesConfiguration
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.HasIndex(s => s.Code).IsUnique();
             builder.HasQueryFilter(s => s.IsActive);
         }
     }
