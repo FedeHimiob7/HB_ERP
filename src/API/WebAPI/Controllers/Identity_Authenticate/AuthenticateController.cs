@@ -1,9 +1,10 @@
 ﻿using Identity.Application.Roles.Commands.RegisterRole;
 using Identity.Application.SystemActions.Commands.Create;
-using Identity.Application.Users.Commands.AssignRoleToUser;
 using Identity.Application.Users.Commands.DeleteUser;
 using Identity.Application.Users.Commands.Login;
 using Identity.Application.Users.Commands.RegisterUser;
+using Identity.Application.Users.Commands.ResetUserPassword;
+using Identity.Application.Users.Commands.UpdateUser;
 using Identity.Application.Users.Queries.GetUserById;
 using Identity.Application.Users.Queries.GetUsersPaged;
 using Identity.Domain.VO;
@@ -38,7 +39,9 @@ namespace WebAPI.Controllers.Identity_Authenticate
                 request.FirstName,
                 request.LastName,
                 request.Email,
-                request.Password
+                request.Password,
+                request.RoleIds,
+                request.PslIds
             );
 
             var result = await _mediator.Send(command);
@@ -84,7 +87,7 @@ namespace WebAPI.Controllers.Identity_Authenticate
             CancellationToken cancellationToken = default)
         {
             var query = new GetUsersPagedQuery(
-                searchParameters.Page,
+                searchParameters.PageNumber,
                 searchParameters.PageSize);
 
             var result = await _mediator.Send(query, cancellationToken);
@@ -106,16 +109,36 @@ namespace WebAPI.Controllers.Identity_Authenticate
             );
         }
 
-        [HttpPost("{id:guid}/Roles")]
-        public async Task<IActionResult> AssignRoleToUser(Guid id, [FromBody] AssignRoleRequest request, CancellationToken cancellationToken)
+        [HttpPatch("{id:guid}/password")]
+        public async Task<IActionResult> ResetUserPassword(Guid id, [FromBody] ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var command = new AssignRoleToUserCommand(id, request.RoleIds);
+            var command = new ResetUserPasswordCommand(id, request.NewPassword);
             var result = await _mediator.Send(command, cancellationToken);
+
             return result.Match(
-                success => Ok(new { Message = "El rol fue asignado al usuario correctamente." }),
+                _ => NoContent(),
                 errors => Problem(errors)
             );
+        }
 
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
+        {
+            var command = new UpdateUserCommand(
+                id,
+                request.FirstName,
+                request.LastName,
+                request.Email,
+                request.RoleIds ?? new List<Guid>(),
+                request.PslIds
+            );
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                userId => Ok(userId),
+                errors => Problem(errors)
+            );
         }
     }
 }

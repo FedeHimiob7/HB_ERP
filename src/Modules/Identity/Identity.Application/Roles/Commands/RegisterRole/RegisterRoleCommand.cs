@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace Identity.Application.Roles.Commands.RegisterRole
 {
     public sealed record RegisterRoleCommand(
-    string Name
+        string Name,
+        List<Guid>? ActionIds
     ) : IRequest<ErrorOr<Guid>>;
 }

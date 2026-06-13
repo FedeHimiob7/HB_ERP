@@ -63,6 +63,11 @@ namespace Identity.Infrastructure.Authentication
                 claims.Add(new Claim("permissions", permissionName));
             }
 
+            foreach (var pslId in user.Psls)
+            {
+                claims.Add(new Claim("psl_ids", pslId.Value.ToString()));
+            }
+
             var token = new JwtSecurityToken(
                 issuer: _options.Issuer,
                 audience: _options.Audience,

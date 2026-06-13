@@ -11,6 +11,7 @@ namespace Identity.Application.Users.Commands.UpdateUser
     string FirstName,
     string LastName,
     string Email,
-    IEnumerable<Guid> RoleIds
+    IEnumerable<Guid> RoleIds,
+    List<Guid>? PslIds = null
     ) : IRequest<ErrorOr<Guid>>;
 }

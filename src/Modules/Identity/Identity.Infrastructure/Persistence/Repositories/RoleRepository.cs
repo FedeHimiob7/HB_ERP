@@ -3,6 +3,7 @@ using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 using Identity.Infrastructure.Persistence.Entities;
 using Identity.Infrastructure.Persistence.Mappers;
+using MassTransit.Initializers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,7 @@ namespace Identity.Infrastructure.Persistence.Repositories
 
            
             existingEntity.Name = role.Name;
+            existingEntity.IsActive = role.IsActive;
 
             var incomingActionIds = role.ActionIds.Select(a => a.Value).ToList();
 
@@ -71,9 +73,13 @@ namespace Identity.Infrastructure.Persistence.Repositories
             }
         }
 
-        public Task<List<Role>> GetAllAsync()
+        public async Task<List<Role>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            var result = await _db.Set<RoleEntity>()
+                .AsNoTracking()
+                .ToListAsync();
+
+            return result.Select(result => result.ToDomain()).ToList();
         }
 
         public async Task<List<RoleId>> GetExistingIdsAsync(IEnumerable<Guid> roleIds, CancellationToken cancellationToken = default)
@@ -87,6 +93,16 @@ namespace Identity.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
 
             return existingIds.Select(RoleId.Create).ToList();
+        }
+
+        public async Task<List<Role>> GetRolesByActionIdAsync(Guid actionId, CancellationToken cancellationToken = default)
+        {
+            var entities = await _db.Set<RoleEntity>()
+                .Include(r => r.RoleActions)
+                .Where(r => r.RoleActions.Any(ra => ra.ActionId == actionId))
+                .ToListAsync(cancellationToken);
+
+            return entities.Select(RoleMapper.ToDomain).ToList();
         }
 
         public async Task<(IReadOnlyList<Role> roles, int totalCount)> GetPagedAsync(

@@ -22,6 +22,8 @@ namespace Identity.Infrastructure.Persistence.Repositories
         public async Task<User?> GetByIdAsync(UserId id)
         {
             var model = await _db.Users
+                .Include(u => u.UserRoles)
+                .Include(u => u.UserPsls)
                 .FirstOrDefaultAsync(x => x.Id == id.Value);
 
             return model is null ? null : UserMapper.ToDomain(model);
@@ -32,6 +34,7 @@ namespace Identity.Infrastructure.Persistence.Repositories
             var model = await _db.Users
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
+                .Include(u => u.UserPsls)
                 .FirstOrDefaultAsync(x => x.NormalizedEmail == email.ToUpper());
 
             return model is null ? null : UserMapper.ToDomain(model);
@@ -53,6 +56,7 @@ namespace Identity.Infrastructure.Persistence.Repositories
         {
             var existing = await _db.Users
                 .Include(u => u.UserRoles)
+                .Include(u => u.UserPsls)
                 .FirstOrDefaultAsync(u => u.Id == user.Id.Value);
 
             if (existing is null)
@@ -71,8 +75,9 @@ namespace Identity.Infrastructure.Persistence.Repositories
             int totalCount = await query.CountAsync(cancellationToken);
             
             var models = await query
-                .Include(u => u.UserRoles) 
-                .OrderBy(u => u.FirstName) 
+                .Include(u => u.UserRoles)
+                .Include(u => u.UserPsls)
+                .OrderBy(u => u.FirstName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);

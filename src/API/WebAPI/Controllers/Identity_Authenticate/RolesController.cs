@@ -1,14 +1,14 @@
 ﻿using Identity.Application.Roles.Commands.AssignAction;
+using Identity.Application.Roles.Commands.DeleteRole;
 using Identity.Application.Roles.Commands.RegisterRole;
+using Identity.Application.Roles.Commands.UpdateRole;
+using Identity.Application.Roles.Queries.GetAllRoles;
 using Identity.Application.Roles.Queries.GetRolePagedQuery;
-using Identity.Application.SystemActions.Commands.Create;
-using Identity.Application.Users.Queries.GetUsersPaged;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.APIModels;
 using WebAPI.APIModels.Identity.Role;
-using WebAPI.APIModels.Identity.SystemActions;
 
 namespace WebAPI.Controllers.Identity_Authenticate
 {
@@ -29,7 +29,8 @@ namespace WebAPI.Controllers.Identity_Authenticate
         public async Task<IActionResult> RegisterRole(RegisterRoleRequest request)
         {
             var command = new RegisterRoleCommand(
-                request.Name
+                request.Name,
+                request.ActionIds
             );
 
             var result = await _mediator.Send(command);
@@ -40,34 +41,24 @@ namespace WebAPI.Controllers.Identity_Authenticate
             );
         }
 
-        [HttpPost]
-        [Route("registerSystemAction")]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateSystemActionRequest request,
-            CancellationToken cancellationToken)
+        [HttpGet]
+        public async Task<IActionResult> GetAllRoles(CancellationToken cancellationToken)
         {
-            var command = new CreateSystemActionCommand(
-                request.Name,
-                request.Description);
-
-            var result = await _mediator.Send(command, cancellationToken);
+            var result = await _mediator.Send(new GetAllRolesQuery(), cancellationToken);
 
             return result.Match(
-                systemActionId => Ok(new
-                {
-                    Id = systemActionId
-                }),
+                roles => Ok(roles),
                 errors => Problem(errors)
             );
         }
 
-        [HttpGet("roles")]
+        [HttpGet("paged")]
         public async Task<IActionResult> GetRolesPaged(
             [FromQuery] SearchParameters searchParameters,
             CancellationToken cancellationToken = default)
         {
             var query = new GetRolesPagedQuery(
-                searchParameters.Page,
+                searchParameters.PageNumber,
                 searchParameters.PageSize);
 
             var result = await _mediator.Send(query, cancellationToken);
@@ -78,6 +69,35 @@ namespace WebAPI.Controllers.Identity_Authenticate
             );
         }
 
+
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateRole(
+            [FromRoute] Guid id,
+            [FromBody] UpdateRoleRequest request,
+            CancellationToken cancellationToken)
+        {
+            var command = new UpdateRoleCommand(id, request.Name, request.ActionIds);
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                _ => NoContent(),
+                errors => Problem(errors)
+            );
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteRole(
+            [FromRoute] Guid id,
+            CancellationToken cancellationToken)
+        {
+            var command = new DeleteRoleCommand(id);
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                _ => NoContent(),
+                errors => Problem(errors)
+            );
+        }
 
         // Endpoint:  api/roles/{id}/actions
         [HttpPost("{id:guid}/actions")]

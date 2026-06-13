@@ -17,5 +17,6 @@ namespace Identity.Domain.Repositories
         Task AddAsync(Role role);
         Task<List<RoleId>> GetExistingIdsAsync(IEnumerable<Guid> roleIds, CancellationToken cancellationToken = default);
         Task<(IReadOnlyList<Role> roles, int totalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken);
+        Task<List<Role>> GetRolesByActionIdAsync(Guid actionId, CancellationToken cancellationToken = default);
     }
 }

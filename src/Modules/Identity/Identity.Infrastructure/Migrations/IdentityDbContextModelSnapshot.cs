@@ -73,6 +73,9 @@ namespace Identity.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -187,6 +190,19 @@ namespace Identity.Infrastructure.Migrations
                     b.ToTable("User", "Identity");
                 });
 
+            modelBuilder.Entity("Identity.Infrastructure.Persistence.Entities.UserPslEntity", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PslId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("UserId", "PslId");
+
+                    b.ToTable("UserPsls", "Identity");
+                });
+
             modelBuilder.Entity("Identity.Infrastructure.Persistence.Entities.UserRoleEntity", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -221,6 +237,17 @@ namespace Identity.Infrastructure.Migrations
                     b.Navigation("SystemAction");
                 });
 
+            modelBuilder.Entity("Identity.Infrastructure.Persistence.Entities.UserPslEntity", b =>
+                {
+                    b.HasOne("Identity.Infrastructure.Persistence.Entities.UserEntity", "User")
+                        .WithMany("UserPsls")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Identity.Infrastructure.Persistence.Entities.UserRoleEntity", b =>
                 {
                     b.HasOne("Identity.Infrastructure.Persistence.Entities.RoleEntity", "Role")
@@ -249,6 +276,8 @@ namespace Identity.Infrastructure.Migrations
 
             modelBuilder.Entity("Identity.Infrastructure.Persistence.Entities.UserEntity", b =>
                 {
+                    b.Navigation("UserPsls");
+
                     b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618

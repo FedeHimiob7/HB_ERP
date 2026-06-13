@@ -30,6 +30,7 @@ namespace HB_ERP.SharedKernel.Domain.Common
         public const string UserNotFound = "Usuario no encontrado.";
         public const string UserInvalidCredentials = "Credenciales inválidas.";
         public const string PasswordInvalido = "La contraseña debe contener al menos una letra, un número y un caracter especial.";
+        public const string PslInvalido = "Una o más líneas de producto/servicio no existen o no están activas.";
 
         // Roles
         public const string NombreDeRolYaRegistrado = "Este Nombre ya esta siendo utilizado.";

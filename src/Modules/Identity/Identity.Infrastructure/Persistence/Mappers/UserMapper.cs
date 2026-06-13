@@ -41,7 +41,23 @@ namespace Identity.Infrastructure.Persistence.Mappers
 
                 ViewAll = user.ViewAll,
                 DefaultDashboard = string.Empty,
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+
+                UserRoles = user.Roles
+                    .Select(r => new UserRoleEntity
+                    {
+                        UserId = user.Id.Value,
+                        RoleId = r.Value
+                    })
+                    .ToList(),
+
+                UserPsls = user.Psls
+                    .Select(p => new UserPslEntity
+                    {
+                        UserId = user.Id.Value,
+                        PslId = p.Value
+                    })
+                    .ToList()
             };
         }
 
@@ -54,6 +70,7 @@ namespace Identity.Infrastructure.Persistence.Mappers
                 email: Email.Create(model.Email).Value,
                 passwordHash: PasswordHash.Create(model.PasswordHash),
                 roles: model.UserRoles.Select(user => new RoleId(user.RoleId)),
+                psls: model.UserPsls.Select(p => new PslId(p.PslId)),
                 isActive: model.IsActive
 
             );
@@ -72,6 +89,14 @@ namespace Identity.Infrastructure.Persistence.Mappers
                 {
                     UserId = target.Id,
                     RoleId = r.Value
+                })
+                .ToList();
+
+            target.UserPsls = source.Psls
+                .Select(p => new UserPslEntity
+                {
+                    UserId = target.Id,
+                    PslId = p.Value
                 })
                 .ToList();
         }

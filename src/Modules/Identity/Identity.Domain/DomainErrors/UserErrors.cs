@@ -34,7 +34,12 @@ namespace Identity.Domain.DomainErrors
 
         public static  Error InvalidCredentials =>
             Error.Validation(
-                code: ErrorCodes.User.InvalidCredentials, 
+                code: ErrorCodes.User.InvalidCredentials,
                 description: FeaturedMessage.UserInvalidCredentials);
+
+        public static Error InvalidPsl =>
+            Error.Validation(
+                code: ErrorCodes.User.InvalidPsl,
+                description: FeaturedMessage.PslInvalido);
     }
 }

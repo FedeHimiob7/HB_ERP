@@ -13,6 +13,8 @@ namespace Identity.Domain.Repositories
         Task<SystemAction?> GetByIdAsync(ActionsId id);
         Task UpdateAsync(SystemAction action);
         Task<List<SystemAction>> GetAllAsync();
+        Task<(IReadOnlyList<SystemAction> Actions, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+        Task<List<ActionsId>> GetExistingIdsAsync(IEnumerable<Guid> actionIds, CancellationToken cancellationToken = default);
         Task<bool> IsNameUniqueAsync(string name, CancellationToken cancellationToken = default);
         Task AddAsync(SystemAction systemAction, CancellationToken cancellationToken = default);
     }

@@ -8,6 +8,7 @@ namespace Identity.Domain
     public sealed class User : AggregateRoot<UserId>
     {
         private readonly List<RoleId> _roles = new();
+        private readonly List<PslId> _psls = new();
 
         public string FirstName { get; private set; } = null!;
         public string LastName { get; private set; } = null!;
@@ -16,29 +17,21 @@ namespace Identity.Domain
         public bool ViewAll { get; private set; }
         public PasswordHash? PasswordHash { get; private set; } 
         public IReadOnlyList<RoleId> Roles => _roles;
+        public IReadOnlyList<PslId> Psls => _psls;
         private User() { }
 
-        private User(UserId id, string firstName, string lastName, 
-                     Email email, PasswordHash passwordHash)
-        : base(id)
-        {
-            FirstName = firstName;
-            LastName = lastName;
-            Email = email;
-            PasswordHash = passwordHash;
-            IsActive = true;
-            ViewAll = false;
-        }
         private User(UserId id, string firstName, string lastName, Email email, PasswordHash passwordHash,
-                     List<RoleId>? roles = null, bool isActive = true)
+                     List<RoleId>? roles = null, List<PslId>? psls = null, bool isActive = true)
+            : base(id)
         {
-            Id = id;     
             FirstName = firstName;
             LastName = lastName;
             Email = email;
             PasswordHash = passwordHash;
             _roles = roles ?? new();
+            _psls = psls ?? new();
             IsActive = isActive;
+            ViewAll = false;
         }
 
         public static User Register(string firstName, string lastName, Email email, PasswordHash passwordHash)
@@ -55,8 +48,8 @@ namespace Identity.Domain
         }
 
         public static User CreateExisting(Guid id, string firstName, string lastName, Email email,
-                                          PasswordHash passwordHash, IEnumerable<RoleId>? roles, 
-                                          bool isActive)
+                                          PasswordHash passwordHash, IEnumerable<RoleId>? roles,
+                                          IEnumerable<PslId>? psls, bool isActive)
         {
             return new User(
                 UserId.Create(id),
@@ -65,6 +58,7 @@ namespace Identity.Domain
                 email,
                 passwordHash,
                 roles?.ToList() ?? new List<RoleId>(),
+                psls?.ToList() ?? new List<PslId>(),
                 isActive
             );
         }
@@ -175,6 +169,52 @@ namespace Identity.Domain
 
             foreach (var role in toRemove)
                 RemoveRole(role);
+        }
+
+        public void AssignPsl(PslId pslId)
+        {
+            Guard.Against.Null(pslId);
+
+            if (_psls.Contains(pslId))
+                return;
+
+            _psls.Add(pslId);
+
+            Raise(new UserPslAssignedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                pslId
+            ));
+        }
+
+        public void RemovePsl(PslId pslId)
+        {
+            Guard.Against.Null(pslId);
+
+            if (!_psls.Contains(pslId))
+                return;
+
+            _psls.Remove(pslId);
+
+            Raise(new UserPslRemovedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                pslId
+            ));
+        }
+
+        public void SyncPsls(IEnumerable<PslId> newPsls)
+        {
+            Guard.Against.Null(newPsls);
+
+            var toAdd = newPsls.Except(_psls).ToList();
+            var toRemove = _psls.Except(newPsls).ToList();
+
+            foreach (var psl in toAdd)
+                AssignPsl(psl);
+
+            foreach (var psl in toRemove)
+                RemovePsl(psl);
         }
     }
 }

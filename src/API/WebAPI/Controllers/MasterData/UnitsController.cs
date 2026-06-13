@@ -1,6 +1,7 @@
 ﻿using MasterData.Application.Units.Commands.CreateUnit;
 using MasterData.Application.Units.Commands.DeleteUnit;
 using MasterData.Application.Units.Commands.UpdateUnit;
+using MasterData.Application.Units.Queries.GetAll;
 using MasterData.Application.Units.Queries.GetById;
 using MasterData.Application.Units.Queries.GetPaged;
 using MasterData.Domain.SearchParametersModel;
@@ -10,7 +11,7 @@ using WebAPI.APIModels.MasterData.Unit;
 namespace WebAPI.Controllers.MasterData
 {
     [ApiController]
-    [Route("api/units")]
+    [Route("api/[controller]")]
     public class UnitsController : ApiController
     {
         private readonly ISender _sender;
@@ -54,11 +55,18 @@ namespace WebAPI.Controllers.MasterData
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPaged([AsParameters] GetUnitsPagedRequest request)
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        {
+            var result = await _sender.Send(new GetAllUnitsQuery(), cancellationToken);
+            return result.Match(units => Ok(units), errors => Problem(errors));
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] GetUnitsPagedRequest request, CancellationToken cancellationToken = default)
         {
             var filter = new UnitFilter(request.PageNumber, request.PageSize, request.SearchTerm);
 
-            var result = await _sender.Send(new GetUnitsPagedQuery(filter));
+            var result = await _sender.Send(new GetUnitsPagedQuery(filter), cancellationToken);
             return result.Match(pagedResult => Ok(pagedResult), errors => Problem(errors));
         }
     }

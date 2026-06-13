@@ -56,6 +56,15 @@ namespace Identity.Domain.Entities
 
         public void Activate() => IsActive = true;
 
-        public void Deactivate() => IsActive = false;
+        public void Deactivate()
+        {
+            if (!IsActive) return;
+
+            IsActive = false;
+
+            Raise(new SystemActionDeletedDomainEvent(
+                Guid.NewGuid(),
+                Id.Value));
+        }
     }
 }

@@ -17,12 +17,14 @@ namespace Identity.Domain.Common
             public const string UserLastNameEmpty = "User.EmptyLastName";
             public const string UserNotFound = "User.NotFound";
             public const string InvalidCredentials = "User.InvalidCredentials";
+            public const string InvalidPsl = "User.InvalidPsl";
         }
 
         public static class Role
         {
             public const string DuplicateRoleName = "Role.DuplicateRoleName";
             public const string RoleNotFound = "Role.NotFound";
+            public const string InvalidAction = "Role.InvalidAction";
         }
         public static class SystemAction
         {

@@ -20,7 +20,7 @@ namespace MasterData.Application.Units.Queries.GetPaged
             var (units, totalCount) = await _repository.GetPagedAsync(request.Filter, cancellationToken);
 
             var mappedItems = units.Select(u => new UnitResponse(
-                u.Id.Value, u.Name, u.Description, u.IsActive
+                u.Id.Value, u.Name, u.Description
             )).ToList();
 
             return new PagedUnitsResult(mappedItems, totalCount);

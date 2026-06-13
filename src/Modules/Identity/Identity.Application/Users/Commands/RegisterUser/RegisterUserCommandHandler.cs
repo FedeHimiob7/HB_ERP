@@ -2,6 +2,7 @@
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.Interface;
+using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 
 namespace Identity.Application.Users.Commands.RegisterUser
@@ -13,12 +14,16 @@ namespace Identity.Application.Users.Commands.RegisterUser
         private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IUserEmailUniquenessChecker _emailChecker;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IRoleRepository _roleRepository;
+        private readonly IPslExistenceChecker _pslChecker;
 
         public RegisterUserCommandHandler(
             IUserRepository userRepository,
             IIdentityUnitOfWork unitOfWork,
             IUserEmailUniquenessChecker userEmailUniquenessChecker,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            IRoleRepository roleRepository,
+            IPslExistenceChecker pslChecker)
         {
             _userRepository = userRepository
                 ?? throw new ArgumentNullException(nameof(userRepository));
@@ -26,11 +31,17 @@ namespace Identity.Application.Users.Commands.RegisterUser
             _unitOfWork = unitOfWork
                 ?? throw new ArgumentNullException(nameof(unitOfWork));
 
-            _emailChecker = userEmailUniquenessChecker 
+            _emailChecker = userEmailUniquenessChecker
                 ?? throw new ArgumentNullException(nameof(userEmailUniquenessChecker));
 
-            _passwordHasher = passwordHasher 
+            _passwordHasher = passwordHasher
                 ?? throw new ArgumentNullException(nameof(passwordHasher));
+
+            _roleRepository = roleRepository
+                ?? throw new ArgumentNullException(nameof(roleRepository));
+
+            _pslChecker = pslChecker
+                ?? throw new ArgumentNullException(nameof(pslChecker));
         }
 
         public async Task<ErrorOr<Guid>> Handle(
@@ -50,6 +61,25 @@ namespace Identity.Application.Users.Commands.RegisterUser
 
             var user = User.Register(command.FirstName, command.LastName, userEmail.Value, passwordHash);
 
+            if (command.RoleIds is { Count: > 0 })
+            {
+                var existingRoleIds = await _roleRepository.GetExistingIdsAsync(command.RoleIds, cancellationToken);
+                if (existingRoleIds.Count != command.RoleIds.Count)
+                    return RoleErrors.RoleNotFound;
+
+                user.SyncRoles(command.RoleIds.Select(RoleId.Create));
+            }
+
+            if (command.PslIds is { Count: > 0 })
+            {
+                foreach (var pslId in command.PslIds)
+                {
+                    if (!await _pslChecker.ExistsAsync(pslId, cancellationToken))
+                        return UserErrors.InvalidPsl;
+                }
+
+                user.SyncPsls(command.PslIds.Select(PslId.Create));
+            }
 
             await _userRepository.AddAsync(user);
 

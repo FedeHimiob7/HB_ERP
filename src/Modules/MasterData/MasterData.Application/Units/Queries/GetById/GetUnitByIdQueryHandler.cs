@@ -22,7 +22,7 @@ namespace MasterData.Application.Units.Queries.GetById
             var unit = await _repository.GetByIdAsync(UnitId.Create(request.Id), cancellationToken);
             if (unit is null) return UnitErrors.NotFound;
 
-            return new UnitResponse(unit.Id.Value, unit.Name, unit.Description, unit.IsActive);
+            return new UnitResponse(unit.Id.Value, unit.Name, unit.Description);
         }
     }
 }

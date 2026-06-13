@@ -10,6 +10,7 @@ namespace Identity.Infrastructure.Persistence.Entities
     {
         public Guid Id { get; set; }
         public required string Name { get; set; }
+        public bool IsActive { get; set; }
 
         public ICollection<UserRoleEntity> UserRoles { get; set; } = new List<UserRoleEntity>();
         public ICollection<RoleActionEntity> RoleActions { get; set; } = new List<RoleActionEntity>();

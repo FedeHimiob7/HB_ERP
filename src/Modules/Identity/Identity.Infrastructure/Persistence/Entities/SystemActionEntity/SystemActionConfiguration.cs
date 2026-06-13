@@ -29,6 +29,8 @@ namespace Identity.Infrastructure.Persistence.Entities
 
             builder.Property(e => e.IsActive)
                    .IsRequired();
+
+            builder.HasQueryFilter(e => e.IsActive);
         }
     }
 }

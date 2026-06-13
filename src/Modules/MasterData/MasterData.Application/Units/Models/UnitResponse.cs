@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace MasterData.Application.Units.Models
 {
-    public record UnitResponse(Guid Id, string Name, string Description, bool IsActive);
+    public record UnitResponse(Guid Id, string Name, string Description);
 }

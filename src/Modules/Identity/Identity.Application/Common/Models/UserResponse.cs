@@ -12,5 +12,6 @@ namespace Identity.Application.Common.Models
     string LastName,
     string Email,
     bool IsActive,
-    List<Guid> Roles);
+    List<Guid> Roles,
+    List<Guid> Psls);
 }

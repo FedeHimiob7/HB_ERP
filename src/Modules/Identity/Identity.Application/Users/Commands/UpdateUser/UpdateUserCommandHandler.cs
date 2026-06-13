@@ -11,11 +11,13 @@ namespace Identity.Application.Users.Commands.UpdateUser
         private readonly IUserRepository _userRepository;
         private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IUserEmailUniquenessChecker _emailChecker;
+        private readonly IPslExistenceChecker _pslChecker;
 
         public UpdateUserCommandHandler(
             IUserRepository userRepository,
             IIdentityUnitOfWork unitOfWork,
-            IUserEmailUniquenessChecker userEmailUniquenessChecker)
+            IUserEmailUniquenessChecker userEmailUniquenessChecker,
+            IPslExistenceChecker pslChecker)
         {
             _userRepository = userRepository
                 ?? throw new ArgumentNullException(nameof(userRepository));
@@ -23,6 +25,8 @@ namespace Identity.Application.Users.Commands.UpdateUser
                 ?? throw new ArgumentNullException(nameof(unitOfWork));
             _emailChecker = userEmailUniquenessChecker
                 ?? throw new ArgumentNullException(nameof(userEmailUniquenessChecker));
+            _pslChecker = pslChecker
+                ?? throw new ArgumentNullException(nameof(pslChecker));
         }
 
         public async Task<ErrorOr<Guid>> Handle(
@@ -52,6 +56,17 @@ namespace Identity.Application.Users.Commands.UpdateUser
 
             var roleIds = command.RoleIds.Select(RoleId.Create).ToList();
             user.SyncRoles(roleIds);
+
+            if (command.PslIds is not null)
+            {
+                foreach (var pslId in command.PslIds)
+                {
+                    if (!await _pslChecker.ExistsAsync(pslId, cancellationToken))
+                        return UserErrors.InvalidPsl;
+                }
+
+                user.SyncPsls(command.PslIds.Select(PslId.Create));
+            }
 
             await _userRepository.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

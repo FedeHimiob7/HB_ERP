@@ -1,56 +1,52 @@
 ﻿
 using Identity.Application.Common.Interfaces;
-using Identity.Application.Users.Commands.RegisterUser;
 using Identity.Domain;
-using Identity.Domain.Common;
 using Identity.Domain.DomainErrors;
 using Identity.Domain.Entities;
 using Identity.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
+using Identity.Domain.VO;
 
 namespace Identity.Application.Roles.Commands.RegisterRole
 {
-    public sealed class RegisterRoleCommandHandler 
+    public sealed class RegisterRoleCommandHandler
         : IRequestHandler<RegisterRoleCommand, ErrorOr<Guid>>
     {
-        private readonly IRoleRepository _RoleRepository;
+        private readonly IRoleRepository _roleRepository;
+        private readonly ISystemActionRepository _systemActionRepository;
         private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IRoleNameUniquenessChecker _roleNameUniquenessChecker;
-        private readonly ILogger<RegisterRoleCommandHandler> _logger;
 
-        public RegisterRoleCommandHandler(IRoleRepository RoleRepository,
-                                          IIdentityUnitOfWork unitOfWork,
-                                          IRoleNameUniquenessChecker roleNameUniquenessChecker,
-                                          ILogger<RegisterRoleCommandHandler> logger)
+        public RegisterRoleCommandHandler(
+            IRoleRepository roleRepository,
+            ISystemActionRepository systemActionRepository,
+            IIdentityUnitOfWork unitOfWork,
+            IRoleNameUniquenessChecker roleNameUniquenessChecker)
         {
-            _RoleRepository = RoleRepository
-                ?? throw new ArgumentNullException(nameof(RoleRepository));
-            _unitOfWork = unitOfWork
-                ?? throw new ArgumentNullException(nameof(unitOfWork));
-            _roleNameUniquenessChecker = roleNameUniquenessChecker
-                ?? throw new ArgumentNullException(nameof(roleNameUniquenessChecker));
-            _logger = logger;
+            _roleRepository = roleRepository;
+            _systemActionRepository = systemActionRepository;
+            _unitOfWork = unitOfWork;
+            _roleNameUniquenessChecker = roleNameUniquenessChecker;
         }
 
         public async Task<ErrorOr<Guid>> Handle(
             RegisterRoleCommand command,
             CancellationToken cancellationToken)
         {
-            if (!await _roleNameUniquenessChecker
-                .IsRoleNameUniqueAsync(command.Name, cancellationToken))
-            {
+            if (!await _roleNameUniquenessChecker.IsRoleNameUniqueAsync(command.Name, cancellationToken))
                 return RoleErrors.NameAlreadyInUse;
-            }
 
             var role = Role.Create(command.Name);
-            await _RoleRepository.AddAsync(role);
+
+            if (command.ActionIds is { Count: > 0 })
+            {
+                var existingIds = await _systemActionRepository.GetExistingIdsAsync(command.ActionIds, cancellationToken);
+                if (existingIds.Count != command.ActionIds.Count)
+                    return RoleErrors.InvalidAction;
+
+                role.SyncActions(existingIds);
+            }
+
+            await _roleRepository.AddAsync(role);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return role.Id.Value;
         }

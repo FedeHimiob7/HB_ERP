@@ -17,6 +17,7 @@ namespace Identity.Infrastructure.Persistence.Mappers
             {
                 Id = domain.Id.Value,
                 Name = domain.Name,
+                IsActive = domain.IsActive,
                 RoleActions = domain.ActionIds.Select(actionId => new RoleActionEntity
                 {
                     RoleId = domain.Id.Value,
@@ -29,7 +30,8 @@ namespace Identity.Infrastructure.Persistence.Mappers
         {
             var role = Role.CreateExisting(
                 new RoleId(entity.Id),
-                entity.Name
+                entity.Name,
+                entity.IsActive
             );
 
             if (entity.RoleActions != null && entity.RoleActions.Any())

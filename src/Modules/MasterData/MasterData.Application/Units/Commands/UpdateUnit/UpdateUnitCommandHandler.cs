@@ -35,7 +35,7 @@ namespace MasterData.Application.Units.Commands.UpdateUnit
             await _repository.UpdateAsync(unit, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new UnitResponse(unit.Id.Value, unit.Name, unit.Description, unit.IsActive);
+            return new UnitResponse(unit.Id.Value, unit.Name, unit.Description);
         }
     }
 }

@@ -43,5 +43,6 @@ namespace Identity.Infrastructure.Persistence
         public DbSet<UserEntity> Users => Set<UserEntity>();
         public DbSet<RoleEntity> Roles => Set<RoleEntity>();
         public DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
+        public DbSet<UserPslEntity> UserPsls => Set<UserPslEntity>();
     }
 }

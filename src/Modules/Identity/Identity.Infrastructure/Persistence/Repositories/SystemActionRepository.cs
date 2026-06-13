@@ -35,6 +35,17 @@ namespace Identity.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
+        public async Task<List<ActionsId>> GetExistingIdsAsync(IEnumerable<Guid> actionIds, CancellationToken cancellationToken = default)
+        {
+            var ids = actionIds.ToList();
+            var existingIds = await _db.Set<SystemActionEntity>()
+                .Where(a => ids.Contains(a.Id))
+                .Select(a => a.Id)
+                .ToListAsync(cancellationToken);
+
+            return existingIds.Select(id => new ActionsId(id)).ToList();
+        }
+
         public async Task<bool> IsNameUniqueAsync(string name, CancellationToken cancellationToken = default)
         {
             return !await _db.Set<SystemActionEntity>()
@@ -47,11 +58,34 @@ namespace Identity.Infrastructure.Persistence.Repositories
             await _db.Set<SystemActionEntity>().AddAsync(entity, cancellationToken);
         }
 
-        public Task UpdateAsync(SystemAction action)
+        public async Task UpdateAsync(SystemAction action)
         {
-            var entity = action.ToEntity();
-            _db.Set<SystemActionEntity>().Update(entity);
-            return Task.CompletedTask;
+            var existingEntity = await _db.Set<SystemActionEntity>()
+                .FirstOrDefaultAsync(e => e.Id == action.Id.Value);
+
+            if (existingEntity is null) return;
+
+            existingEntity.Name = action.Name.Value;
+            existingEntity.Description = action.Description;
+            existingEntity.IsActive = action.IsActive;
+        }
+
+        public async Task<(IReadOnlyList<SystemAction> Actions, int TotalCount)> GetPagedAsync(
+            int pageNumber,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _db.Set<SystemActionEntity>().AsNoTracking();
+
+            int totalCount = await query.CountAsync(cancellationToken);
+
+            var entities = await query
+                .OrderBy(a => a.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return (entities.Select(e => e.ToDomain()).ToList(), totalCount);
         }
     }
 }

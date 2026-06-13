@@ -10,6 +10,8 @@ namespace Identity.Application.Users.Commands.RegisterUser
     string FirstName,
     string LastName,
     string Email,
-    string Password
+    string Password,
+    List<Guid>? RoleIds = null,
+    List<Guid>? PslIds = null
     ) : IRequest<ErrorOr<Guid>>;
 }

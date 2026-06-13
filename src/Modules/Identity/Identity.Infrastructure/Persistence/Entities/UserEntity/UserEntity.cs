@@ -33,5 +33,6 @@ namespace Identity.Infrastructure.Persistence.Entities
 
 
         public ICollection<UserRoleEntity> UserRoles { get; set; } = new List<UserRoleEntity>();
+        public ICollection<UserPslEntity> UserPsls { get; set; } = new List<UserPslEntity>();
     }
 }

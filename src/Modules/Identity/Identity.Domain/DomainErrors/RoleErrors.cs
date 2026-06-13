@@ -21,6 +21,9 @@ namespace Identity.Domain.DomainErrors
                 code: ErrorCodes.Role.RoleNotFound,
                 description: FeaturedMessage.RoleNotFound);
 
-        
+        public static Error InvalidAction =>
+            Error.Validation(
+                code: ErrorCodes.Role.InvalidAction,
+                description: "Una o más acciones no existen.");
     }
 }

@@ -30,7 +30,8 @@ namespace Identity.Application.Users.Queries.GetUserById
                 user.LastName,
                 user.Email.Value,
                 user.IsActive,
-                user.Roles.Select(r => r.Value).ToList()
+                user.Roles.Select(r => r.Value).ToList(),
+                user.Psls.Select(p => p.Value).ToList()
                 );
         }
     }

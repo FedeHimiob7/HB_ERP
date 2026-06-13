@@ -19,6 +19,11 @@ namespace Identity.Infrastructure.Persistence.Entities
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.Property(r => r.IsActive)
+                .IsRequired();
+
+            builder.HasQueryFilter(r => r.IsActive);
+
             builder.HasMany(r => r.UserRoles)
                 .WithOne(ur => ur.Role)
                 .HasForeignKey(ur => ur.RoleId);

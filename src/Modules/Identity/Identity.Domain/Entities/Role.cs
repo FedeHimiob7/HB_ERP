@@ -32,9 +32,11 @@ namespace Identity.Domain.Entities
         {
             return new Role(RoleId.New(), name);
         }
-        public static Role CreateExisting(RoleId id, string name)
+        public static Role CreateExisting(RoleId id, string name, bool isActive = true)
         {
-            return new Role(id, name);
+            var role = new Role(id, name);
+            role.IsActive = isActive;
+            return role;
         }
 
         public void ChangeName(string name)
@@ -67,6 +69,20 @@ namespace Identity.Domain.Entities
                     this.Id,
                     actionId));
             }
+        }
+
+        public void SyncActions(IEnumerable<ActionsId> newActions)
+        {
+            Guard.Against.Null(newActions);
+
+            var toAdd = newActions.Except(_actionIds).ToList();
+            var toRemove = _actionIds.Except(newActions).ToList();
+
+            foreach (var action in toAdd)
+                AssignAction(action);
+
+            foreach (var action in toRemove)
+                RevokeAction(action);
         }
 
         public void Activate() => IsActive = true;

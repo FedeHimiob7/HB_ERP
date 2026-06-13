@@ -1,6 +1,7 @@
 ﻿
 using HB_ERP.SharedKernel.Infrastructure;
 using Identity.Application;
+using Identity.Application.Common.Interfaces;
 using Identity.Application.EventHandlers;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
@@ -10,6 +11,7 @@ using MasterData.Application;
 using MasterData.Infrastructure;
 using MasterData.Infrastructure.Persistence;
 using Serilog;
+using WebAPI.Adapters;
 using WebAPI.Middlewares;
 
 namespace WebAPI
@@ -48,6 +50,8 @@ namespace WebAPI
                                 //MasterData
                                 .AddMasterDataInfrastructure(builder.Configuration)
                                 .AddMasterDataApplication();
+
+                builder.Services.AddScoped<IPslExistenceChecker, PslExistenceChecker>();
 
                 builder.Services.AddMassTransit(x =>
                 {                    

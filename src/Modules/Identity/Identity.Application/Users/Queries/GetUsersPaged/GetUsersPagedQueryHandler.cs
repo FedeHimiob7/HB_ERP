@@ -28,7 +28,8 @@ namespace Identity.Application.Users.Queries.GetUsersPaged
                 user.LastName,
                 user.Email.Value,
                 user.IsActive,
-                user.Roles.Select(r => r.Value).ToList()
+                user.Roles.Select(r => r.Value).ToList(),
+                user.Psls.Select(p => p.Value).ToList()
             )).ToList();
 
             return new PagedList<UserResponse>(userResponses, totalCount, request.PageNumber, request.PageSize);
