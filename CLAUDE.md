@@ -93,6 +93,12 @@ Todas las entidades de MasterData siguen el mismo patrón de paginación:
 
 **Nota:** `State` usa `StateFilter` con `CountryId` y `IsActive` adicionales; el resto solo tienen `SearchTerm` heredado de `PaginationFilter`.
 
+### Response models — qué propiedades exponer al UI
+
+**Regla:** `IsActive` **nunca se incluye** en los response models (`*Response.cs`). Es una propiedad interna de dominio que el UI no consume y no debe conocer.
+
+Propiedades que sí se exponen: `Id`, campos de negocio (nombre, código, descripción, etc.), y en entidades con enum tipo, también el valor entero del enum y su nombre legible (`TaxType` + `TaxTypeName`).
+
 ### Adding a new entity to an existing module
 1. Create the aggregate in `*.Domain` extending `AggregateRoot<TId>`.
 2. Add commands/queries + handlers in `*.Application`; add a FluentValidation validator in the same folder.
@@ -100,6 +106,7 @@ Todas las entidades de MasterData siguen el mismo patrón de paginación:
 4. Run `dotnet ef migrations add` for the relevant module (see above).
 5. Register any new services in the module's `DependencyInjection` extension method.
 6. Para paginación: seguir el patrón descrito en la sección **Paginación** arriba.
+7. Para el response model: **no incluir `IsActive`** — ver sección "Response models" arriba.
 
 ### Solution layout
 ```
@@ -139,6 +146,50 @@ El JWT generado incluye claims: `sub` (userId), `email`, `unique_name` (firstNam
 | `Unit` | Unidad de medida |
 
 Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`).
+
+## Domain events — limitación importante en Identity
+
+El `PublishDomainEventsInterceptor` está registrado en `IdentityDbContext` pero **nunca dispara eventos** en la práctica. Motivo: el interceptor busca `IHasDomainEvents` en las entidades rastreadas por EF (`RoleEntity`, `UserEntity`, etc.), que son POCOs simples sin esa interfaz. Los domain events viven en los objetos de dominio (`Role`, `User`) que no son trackeados directamente por EF (se usa el patrón mapper).
+
+**Patrón correcto en Identity:** el cleanup de relaciones se hace **directamente en el command handler**, no vía domain event handlers. Ejemplos establecidos:
+- `DeleteSystemActionCommandHandler` — al desactivar una `SystemAction`, busca los roles que la tienen y les revoca la acción en el mismo handler.
+- `DeleteRoleCommandHandler` — al desactivar un `Role`, busca los usuarios que lo tienen y les elimina el rol en el mismo handler.
+
+No crear domain event handlers en Identity para lógica de cleanup — serán código muerto.
+
+---
+
+## Plan de migración y módulos futuros
+
+El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectura completa del sistema. Decisiones clave ya tomadas:
+
+### Módulos planificados y dónde viven las entidades clave
+| Entidad | Módulo | Razón |
+|---------|--------|-------|
+| `Customer` | `Sales` | Cliente es un concepto de ventas |
+| `Supplier` | `Procurement` | Proveedor es un concepto de compras |
+| `Tax` | `MasterData` | Catálogo compartido; se usa en Sales, Procurement, Inventory |
+| `ExchangeRate` | `MasterData` | Catálogo compartido; lo consumen todos los módulos transaccionales |
+| `SaleOrder`, POS | `Sales` | Todo el flujo de venta |
+| `PurchaseOrder` | `Procurement` | Todo el flujo de compra |
+
+**No existe** un módulo `CustomersAndSuppliers` — esa decisión fue descartada.
+
+### Alcance del módulo Inventory (próximo a implementar)
+Inventory es **netamente de inventario**. Incluye:
+- Productos, categorías, subcategorías, marcas, tipos, almacenes
+- Stock por almacén
+- Movimientos internos: traslados entre almacenes, ajustes de stock, ingresos de mercancía, despachos
+
+**No incluye** (pertenecen a otros módulos):
+- `Customer` ni `Supplier` — Inventory no los referencia directamente
+- Compras, ventas, devoluciones, facturación — son responsabilidad de `Procurement` y `Sales`
+- La integración con órdenes de compra/venta vendrá después vía eventos, cuando esos módulos existan
+
+### Estrategia de desarrollo incremental
+No se completa un módulo al 100% antes de pasar al siguiente. Se implementan las responsabilidades core del módulo, se avanza al siguiente, y se vuelve a agregar integraciones cuando los módulos que necesitan interactuar ya existen. Esto evita over-engineering y permite avanzar.
+
+---
 
 ## Key packages
 | Package | Purpose |

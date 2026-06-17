@@ -37,6 +37,8 @@ namespace MasterData.Infrastructure.Persistence
         public DbSet<Country> Countries { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<Domain.Entities.Unit> Units { get; set; }
+        public DbSet<Tax> Taxes { get; set; }
+        public DbSet<City> Cities { get; set; }
 
 
     }

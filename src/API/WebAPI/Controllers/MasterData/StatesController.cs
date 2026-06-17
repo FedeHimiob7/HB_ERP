@@ -1,6 +1,7 @@
 ﻿using MasterData.Application.States.Commands.CreateState;
 using MasterData.Application.States.Commands.DeleteState;
 using MasterData.Application.States.Commands.UpdateState;
+using MasterData.Application.States.Queries.GetAll;
 using MasterData.Application.States.Queries.GetById;
 using MasterData.Application.States.Queries.GetPaged;
 using Microsoft.AspNetCore.Authorization;
@@ -70,6 +71,18 @@ namespace WebAPI.Controllers.MasterData
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] Guid? countryId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var result = await _sender.Send(new GetAllStatesQuery(countryId), cancellationToken);
+
+            return result.Match(
+                states => Ok(states),
+                errors => Problem(errors));
+        }
+
+        [HttpGet("paged")]
         public async Task<IActionResult> GetPaged(
                 [FromQuery] GetStatesPagedRequest request,
                 CancellationToken cancellationToken = default)

@@ -13,7 +13,7 @@ namespace MasterData.Domain.Repositories
     {
         Task<State?> GetByIdAsync(StateId id, CancellationToken cancellationToken = default);
         Task<State?> GetByCodeAsync(string code, CancellationToken cancellationToken = default);
-        Task<List<State>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<List<State>> GetAllAsync(CountryId? countryId = null, CancellationToken cancellationToken = default);
 
         Task<(IReadOnlyList<State> States, int TotalCount)> GetPagedAsync(
             StateFilter filter,

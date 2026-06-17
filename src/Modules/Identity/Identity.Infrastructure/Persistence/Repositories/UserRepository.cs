@@ -65,6 +65,17 @@ namespace Identity.Infrastructure.Persistence.Repositories
             UserMapper.MapToExistingEntity(user, existing);
         }
 
+        public async Task<List<User>> GetUsersByRoleIdAsync(Guid roleId, CancellationToken cancellationToken = default)
+        {
+            var entities = await _db.Users
+                .Include(u => u.UserRoles)
+                .Include(u => u.UserPsls)
+                .Where(u => u.UserRoles.Any(ur => ur.RoleId == roleId))
+                .ToListAsync(cancellationToken);
+
+            return entities.Select(UserMapper.ToDomain).ToList();
+        }
+
         public async Task<(IReadOnlyList<User> Users, int TotalCount)> GetPagedAsync(
                 int pageNumber,
                 int pageSize,

@@ -50,12 +50,14 @@ namespace MasterData.Infrastructure.Persistence.Repositories
             return Task.CompletedTask;
         }
 
-        public async Task<List<State>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<List<State>> GetAllAsync(CountryId? countryId = null, CancellationToken cancellationToken = default)
         {
-            return await _dbContext.States
-                .AsNoTracking()
-                .OrderBy(s => s.Name)
-                .ToListAsync(cancellationToken);
+            var query = _dbContext.States.AsNoTracking();
+
+            if (countryId.HasValue)
+                query = query.Where(s => s.CountryId == countryId.Value);
+
+            return await query.OrderBy(s => s.Name).ToListAsync(cancellationToken);
         }
 
         public async Task<(IReadOnlyList<State> States, int TotalCount)> GetPagedAsync(

@@ -49,6 +49,8 @@ namespace MasterData.Infrastructure
             services.AddScoped<ICountryRepository, CountryRepository>();
             services.AddScoped<IStateRepository, StateRepository>();
             services.AddScoped<IUnitRepository, UnitRepository>();
+            services.AddScoped<ITaxRepository, TaxRepository>();
+            services.AddScoped<ICityRepository, CityRepository>();
 
             return services;
         }

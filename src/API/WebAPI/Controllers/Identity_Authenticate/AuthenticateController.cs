@@ -109,7 +109,7 @@ namespace WebAPI.Controllers.Identity_Authenticate
             );
         }
 
-        [HttpPatch("{id:guid}/password")]
+        [HttpPut("{id:guid}/password")]
         public async Task<IActionResult> ResetUserPassword(Guid id, [FromBody] ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
             var command = new ResetUserPasswordCommand(id, request.NewPassword);

@@ -12,8 +12,9 @@ namespace Identity.Domain
         Task<User?> GetByIdAsync(UserId id);
         Task<User?> GetByEmailAsync(string email);
         Task<List<User>> GetAllAsync();
-        Task UpdateAsync(User user);        
+        Task UpdateAsync(User user);
         Task AddAsync(User user);
         Task<(IReadOnlyList<User> Users, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken);
+        Task<List<User>> GetUsersByRoleIdAsync(Guid roleId, CancellationToken cancellationToken = default);
     }
 }
