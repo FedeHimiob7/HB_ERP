@@ -1,4 +1,5 @@
-﻿using ErrorOr;
+using ErrorOr;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using MasterData.Application.ProductServiceLines.Models;
 using MasterData.Domain.Repositories;
 using MasterData.Domain.VO;
@@ -15,10 +16,12 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetById
     : IRequestHandler<GetProductServiceLineByIdQuery, ErrorOr<ProductServiceLineResponse>>
     {
         private readonly IProductServiceLineRepository _repository;
+        private readonly ICurrentUserProvider _currentUser;
 
-        public GetProductServiceLineByIdQueryHandler(IProductServiceLineRepository repository)
+        public GetProductServiceLineByIdQueryHandler(IProductServiceLineRepository repository, ICurrentUserProvider currentUser)
         {
             _repository = repository;
+            _currentUser = currentUser;
         }
 
         public async Task<ErrorOr<ProductServiceLineResponse>> Handle(
@@ -29,7 +32,7 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetById
 
             var psl = await _repository.GetByIdAsync(id, cancellationToken);
 
-            if (psl is null)
+            if (psl is null || !_currentUser.PslIds.Contains(psl.Id.Value))
             {
                 return Error.NotFound(
                     code: "ProductServiceLine.NotFound",

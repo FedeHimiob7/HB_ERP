@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using HB_ERP.SharedKernel.Application.Behaviors;
+using HB_ERP.SharedKernel.Application.Currency;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +31,9 @@ namespace HB_ERP.SharedKernel.Application.DependencyInjection
 
             // 3. Registra los validadores del módulo específico
             services.AddValidatorsFromAssembly(moduleAssembly);
+
+            // 4. CurrencyConverter — singleton stateless, compartido por todos los módulos
+            services.TryAddSingleton<ICurrencyConverter, CurrencyConverter>();
 
             return services;
         }

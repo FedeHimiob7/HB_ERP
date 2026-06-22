@@ -1,4 +1,5 @@
-﻿using ErrorOr;
+using ErrorOr;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using MasterData.Application.ProductServiceLines.Models;
 using MasterData.Domain.Repositories;
 using MediatR;
@@ -14,10 +15,12 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetPaged
     : IRequestHandler<GetProductServiceLinesPagedQuery, ErrorOr<PagedProductServiceLinesResult>>
     {
         private readonly IProductServiceLineRepository _repository;
+        private readonly ICurrentUserProvider _currentUser;
 
-        public GetProductServiceLinesPagedQueryHandler(IProductServiceLineRepository repository)
+        public GetProductServiceLinesPagedQueryHandler(IProductServiceLineRepository repository, ICurrentUserProvider currentUser)
         {
             _repository = repository;
+            _currentUser = currentUser;
         }
 
         public async Task<ErrorOr<PagedProductServiceLinesResult>> Handle(
@@ -27,6 +30,7 @@ namespace MasterData.Application.ProductServiceLines.Queries.GetPaged
             var (lines, totalCount) = await _repository.GetPagedAsync(
                 request.PageNumber,
                 request.PageSize,
+                _currentUser.PslIds,
                 request.SearchTerm,
                 cancellationToken);
 

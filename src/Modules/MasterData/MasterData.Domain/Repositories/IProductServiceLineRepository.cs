@@ -11,10 +11,11 @@ namespace MasterData.Domain.Repositories
     public interface IProductServiceLineRepository
     {
         Task<ProductServiceLine?> GetByIdAsync(ProductServiceLineId id, CancellationToken cancellationToken = default);
-        Task<List<ProductServiceLine>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<List<ProductServiceLine>> GetAllAsync(IReadOnlyList<Guid> allowedPslIds, CancellationToken cancellationToken = default);
         Task<(IReadOnlyList<ProductServiceLine> ProductServiceLines, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            IReadOnlyList<Guid> allowedPslIds,
             string? searchTerm = null,
             CancellationToken cancellationToken = default);
         Task AddAsync(ProductServiceLine productServiceLine, CancellationToken cancellationToken = default);

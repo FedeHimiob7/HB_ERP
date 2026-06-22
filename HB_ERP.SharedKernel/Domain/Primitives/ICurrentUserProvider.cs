@@ -10,5 +10,6 @@ namespace HB_ERP.SharedKernel.Domain.Primitives
     {
         string? UserId { get; }
         bool IsAuthenticated { get; }
+        IReadOnlyList<Guid> PslIds { get; }
     }
 }

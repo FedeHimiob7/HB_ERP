@@ -166,6 +166,42 @@ namespace MasterData.Infrastructure.Migrations
                     b.ToTable("Currencies", "MasterData");
                 });
 
+            modelBuilder.Entity("MasterData.Domain.Entities.ExchangeRate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("RegisterDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegisterDate");
+
+                    b.ToTable("ExchangeRates", "MasterData");
+                });
+
             modelBuilder.Entity("MasterData.Domain.Entities.ProductServiceLine", b =>
                 {
                     b.Property<Guid>("Id")

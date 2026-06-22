@@ -39,6 +39,7 @@ namespace MasterData.Infrastructure.Persistence
         public DbSet<Domain.Entities.Unit> Units { get; set; }
         public DbSet<Tax> Taxes { get; set; }
         public DbSet<City> Cities { get; set; }
+        public DbSet<ExchangeRate> ExchangeRates { get; set; }
 
 
     }

@@ -18,7 +18,7 @@ namespace Identity.Application.EventHandlers
     {
         private readonly ILogger<CurrencyCreatedConsumer> _logger;
         private readonly IRoleRepository _roleRepository;
-        private readonly IIdentityUnitOfWork _unitOfWork; // <-- 1. Inyectamos el UnitOfWork
+        private readonly IIdentityUnitOfWork _unitOfWork; 
 
         public CurrencyCreatedConsumer(
             ILogger<CurrencyCreatedConsumer> logger,

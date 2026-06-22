@@ -4,8 +4,10 @@ using HB_ERP.SharedKernel.Infrastructure.Interceptors;
 using MassTransit;
 using MasterData.Application;
 using MasterData.Domain.Repositories;
+using MasterData.Infrastructure.BackgroundServices;
 using MasterData.Infrastructure.Persistence;
 using MasterData.Infrastructure.Persistence.Repositories;
+using MasterData.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +53,16 @@ namespace MasterData.Infrastructure
             services.AddScoped<IUnitRepository, UnitRepository>();
             services.AddScoped<ITaxRepository, TaxRepository>();
             services.AddScoped<ICityRepository, CityRepository>();
+            services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
+            services.AddScoped<IBCVRateScrapingService, BCVRateScrapingService>();
+            services.AddHttpClient("BCV", client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+            services.AddHostedService<BCVRateSyncWorker>();
 
             return services;
         }

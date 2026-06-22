@@ -23,5 +23,12 @@ namespace HB_ERP.SharedKernel.Application.Security
                                  ?? _httpContextAccessor.HttpContext?.User?.FindFirst("sub")?.Value;
 
         public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+
+        public IReadOnlyList<Guid> PslIds =>
+            _httpContextAccessor.HttpContext?.User?.FindAll("psl_ids")
+                .Select(c => Guid.TryParse(c.Value, out var g) ? g : (Guid?)null)
+                .Where(g => g.HasValue)
+                .Select(g => g!.Value)
+                .ToList() ?? new List<Guid>();
     }
 }

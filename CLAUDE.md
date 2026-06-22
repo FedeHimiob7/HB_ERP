@@ -51,6 +51,7 @@ All domain entities extend `AggregateRoot<TId>`. Key primitives:
 - `OutboxMessage` — used by both modules for reliable event publishing
 - `PublishDomainEventsInterceptor` — fires domain events via MediatR on `SaveChangesAsync`
 - Integration events live in `HB_ERP.SharedKernel/IntegrationEvents/` and are shared across modules
+- `ICurrencyConverter` / `CurrencyConverter` — injectable, stateless, registered as Singleton. Converts VES↔USD↔EUR. Used **only in Query Handlers**, never in domain entities. `ToUSD(amount, currencyCode, exchangeRate)` / `FromUSD(amountUSD, currencyCode, exchangeRate)`.
 
 ### Cross-module communication
 Modules do **not** reference each other directly. Communication is async:
@@ -87,11 +88,13 @@ Todas las entidades de MasterData siguen el mismo patrón de paginación:
 |---------|-------------------|---------------|
 | `Country` | `Name` | — |
 | `State` | `Name`, `Code`, nombre del `Country` | `CountryId`, `IsActive` |
+| `City` | `Name`, nombre del `State` | `StateId` |
 | `Currency` | `Code`, `Name`, `Symbol` | — |
 | `ProductServiceLine` | `Name`, `Description` | — |
 | `Unit` | `Name`, `Description` | — |
+| `Tax` | `Name` | `TaxType` |
 
-**Nota:** `State` usa `StateFilter` con `CountryId` y `IsActive` adicionales; el resto solo tienen `SearchTerm` heredado de `PaginationFilter`.
+**Nota:** `State` y `City` usan filtros extra con FK + `IsActive`; el resto solo tienen `SearchTerm` heredado de `PaginationFilter`. `ExchangeRate` tiene paginado propio (sin SearchTerm, ordenado por `RegisterDate` desc).
 
 ### Response models — qué propiedades exponer al UI
 
@@ -120,10 +123,12 @@ src/
       Identity.Integration/           ← MassTransit consumers for incoming events
       Identity.Shared/                ← DTOs shared with API
     MasterData/
-      MasterData.Domain/              ← Currency, ProductServiceLine, Country, State, Unit entities
-      MasterData.Application/         ← CQRS handlers and validators per entity
+      MasterData.Domain/              ← Currency, PSL, Country, State, City, Unit, Tax, ExchangeRate
+      MasterData.Application/         ← CQRS handlers y validators por entidad; IBCVRateScrapingService
       MasterData.Infrastructure/      ← MasterDataDbContext, repositories, migrations
-HB_ERP.SharedKernel/                  ← DDD primitives, interceptors, integration events
+                                         BCVRateScrapingService, BCVRateSyncWorker (BackgroundService)
+    Inventory/                        ← PRÓXIMO MÓDULO
+HB_ERP.SharedKernel/                  ← DDD primitives, interceptors, integration events, ICurrencyConverter
 tests/
 ```
 
@@ -143,9 +148,19 @@ El JWT generado incluye claims: `sub` (userId), `email`, `unique_name` (firstNam
 | `ProductServiceLine` | Línea de producto/servicio |
 | `Country` | País; tiene estados/provincias |
 | `State` | Estado/provincia; siempre vinculado a un `Country` |
+| `City` | Ciudad; siempre vinculada a un `State` |
 | `Unit` | Unidad de medida |
+| `Tax` | Impuesto: nombre, `TaxType` (enum: `IVA=1`, `IGTF=2`, `ISLR=3`), `Rate` (%). Agregar nuevos tipos al enum. |
+| `ExchangeRate` | Tasa de cambio Bs/USD. `Source` enum: `BCV=1`, `Manual=2`. Un registro por cambio de valor. |
 
-Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`).
+Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`), excepto `ExchangeRate` (es inmutable — cada cambio genera un registro nuevo).
+
+### ExchangeRate — comportamiento especial
+- **`GET /api/exchangerates/current`**: va al BCV en ese momento, guarda en BD si la tasa cambió, devuelve la tasa fresca. Si BCV no responde, devuelve la última tasa guardada (fallback). **El UI siempre usa este endpoint** al abrir cualquier formulario con tasa de cambio.
+- **`GET /api/exchangerates/by-date?date=YYYY-MM-DD`**: devuelve la última tasa registrada **en o antes** de esa fecha. No falla si ese día no hubo sync. Usar cuando el usuario cambia la fecha de una transacción.
+- **`BCVRateSyncWorker`** (BackgroundService): despierta a las **12:00 y 18:00** hora local para sincronizar con BCV, garantizando que todos los días haya al menos un registro aunque nadie use el sistema.
+- **`POST /api/exchangerates/sync-bcv`**: fuerza sync manual (uso administrativo/emergencias).
+- `IBCVRateScrapingService` vive en `MasterData.Application/Interfaces/`; implementación con HtmlAgilityPack en `MasterData.Infrastructure/Services/`.
 
 ## Domain events — limitación importante en Identity
 
@@ -175,16 +190,124 @@ El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectur
 
 **No existe** un módulo `CustomersAndSuppliers` — esa decisión fue descartada.
 
-### Alcance del módulo Inventory (próximo a implementar)
+### Alcance del módulo Inventory (en desarrollo)
 Inventory es **netamente de inventario**. Incluye:
-- Productos, categorías, subcategorías, marcas, tipos, almacenes
-- Stock por almacén
-- Movimientos internos: traslados entre almacenes, ajustes de stock, ingresos de mercancía, despachos
+- Catálogo: `ProductType`, `ProductCategory`, `ProductSubCategory`, `ProductBrand`, `Warehouse`, `StorageType`
+- Producto: `Product` — entidad central del sistema (ver sección Product más abajo)
+- Stock por almacén y movimientos internos
 
 **No incluye** (pertenecen a otros módulos):
 - `Customer` ni `Supplier` — Inventory no los referencia directamente
-- Compras, ventas, devoluciones, facturación — son responsabilidad de `Procurement` y `Sales`
-- La integración con órdenes de compra/venta vendrá después vía eventos, cuando esos módulos existan
+- Compras, ventas, devoluciones, facturación — responsabilidad de `Procurement` y `Sales`
+- `Equipment` — se implementa después de Product; es un aggregate separado que apunta a `ProductId`
+- La integración con órdenes de compra/venta vendrá vía eventos cuando esos módulos existan
+
+### Product — diseño del aggregate (Inventory)
+Product es la entidad más transversal del sistema (ventas, compras, inventario, mantenimiento, contratos). **Un único `CreateProductCommand` es el responsable de crear productos** — ningún otro módulo instancia `Product` directamente. Si otro módulo necesita crear un producto, llama al endpoint REST o publica un integration event que Inventory consume.
+
+#### Estructura de campos confirmada
+```
+IDENTIDAD
+  ProductId              VO (Guid)
+  Code                   string, requerido — auto-generado: {YYYYMMDD}-{PSLId}-{correlativo}
+                         editable por el usuario; el formato es referencial
+  ItemNumberByDay        int — correlativo diario (sin patrón draft; se genera al crear)
+  Barcode                string?
+  ExternalCode           string?  (código de referencia externa — proveedor u otro sistema)
+
+BÁSICO
+  Name                   string, requerido
+  Description            string?
+  ModelName              string?
+
+CLASIFICACIÓN (IDs únicamente, sin navigation properties)
+  ProductServiceLineId   requerido
+  ProductTypeId?
+  ProductCategoryId?
+  ProductSubCategoryId?
+  ProductBrandId?
+
+FLAGS
+  IsSalable              bool
+  IsPurchasable          bool
+  IsStored               bool  (tiene stock físico en almacén)
+
+COSTO (puede estar en cualquier moneda — depende del proveedor)
+  Cost                   decimal
+  CostCurrencyId         CurrencyId
+  CostExchangeRate       decimal  (tasa BCV vigente cuando se seteó)
+
+PRECIO PRINCIPAL
+  Price                  decimal        ← Price1, precio base de venta
+  PriceCurrencyId        CurrencyId     ← moneda de TODOS los precios (Price1..5)
+  PriceExchangeRate      decimal        ← tasa de TODOS los precios (Price1..5)
+
+PRECIOS ADICIONALES (heredan PriceCurrencyId y PriceExchangeRate del precio principal)
+  Price2                 decimal?
+  Price3                 decimal?
+  Price4                 decimal?
+  Price5                 decimal?
+
+IMPUESTOS (many-to-many via IDs — reemplazan los strings del legado)
+  _purchaseTaxIds        List<TaxId>
+  _saleTaxIds            List<TaxId>
+
+UNIDADES
+  PurchaseUnitId         UnitId?
+  SaleUnitId             UnitId?
+  UnitConversionFactor   decimal?  (cuántas unidades de compra = 1 unidad de venta)
+
+FÍSICO / EMPAQUE
+  Weight                 decimal?
+  Volume                 decimal?
+  ContentCapacity        decimal?  (capacidad del envase/contenedor)
+
+COMPRA (info referencial para Procurement)
+  PurchaseDescription    string?
+  DaysToDeliver          int?
+  ImportationCost        decimal?
+
+MISC
+  Tags                   string?   (campo libre, sin lógica backend)
+  ImageUrl               string?
+  ProfitMargin           decimal?
+
+HISTORIAL
+  _priceHistory          List<ProductPriceHistory>  (child entity)
+
+  IsActive               bool
+```
+
+#### ProductPriceHistory (child entity)
+Registra cada cambio de precios. Reemplaza el patrón `New/Current/Previous` del legado.
+```
+  ProductId, ChangedAt, ChangedByUserId
+  OldCost, OldCostCurrencyId, OldCostExchangeRate
+  NewCost, NewCostCurrencyId, NewCostExchangeRate
+  OldPrice, OldPriceCurrencyId, OldPriceExchangeRate
+  NewPrice, NewPriceCurrencyId, NewPriceExchangeRate
+  OldPrice2..5, NewPrice2..5
+```
+
+#### Reglas de negocio clave
+- `Code` se genera en `CreateProductCommandHandler` consultando `MAX(ItemNumberByDay)` del día actual para ese PSL. Sin patrón draft — creación en un solo paso.
+- Cuando se actualiza `PriceCurrencyId` o `PriceExchangeRate`, Price2-5 quedan bajo la nueva moneda/tasa automáticamente (comparten el mismo bloque).
+- Precios de venta (Price..5) estandarizados en USD. Costo puede ser en cualquier moneda.
+- Conversiones de moneda **solo en Query Handlers** vía `ICurrencyConverter`. Nunca en la entidad.
+- `[NotMapped]` computados del legado van a DTOs en Application, nunca al dominio.
+
+#### Propiedades diferidas a otros módulos
+| Propiedad legado | Módulo destino |
+|---|---|
+| `WareHouseId`, `StorageTypeId`, `Minimum`, `Maximum` | Inventory stock (un producto puede estar en múltiples almacenes) |
+| `PurchaseResponsableId`, `DefaultBuyResponsableId` | Procurement |
+| `SerialNumber` | Equipment (serial es por unidad física) |
+| `SalesCommission` | Sales |
+| `OptionalProductId` | Sales |
+| `IsVisibleOnPOS`, `POSPrinterId` | POS |
+| `IsOperationManufacture`, `IsAssemblyProduct` | Manufacturing |
+| `BudgetAccount`, `IncomeAccount`, `ExpenseAccount` | Accounting |
+| `ProductCargoEquipmentId` | Equipment/Logistics |
 
 ### Estrategia de desarrollo incremental
 No se completa un módulo al 100% antes de pasar al siguiente. Se implementan las responsabilidades core del módulo, se avanza al siguiente, y se vuelve a agregar integraciones cuando los módulos que necesitan interactuar ya existen. Esto evita over-engineering y permite avanzar.

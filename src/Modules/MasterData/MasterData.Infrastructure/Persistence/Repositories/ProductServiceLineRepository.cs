@@ -1,4 +1,4 @@
-﻿using MasterData.Domain.Entities;
+using MasterData.Domain.Entities;
 using MasterData.Domain.Repositories;
 using MasterData.Domain.VO;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +24,7 @@ namespace MasterData.Infrastructure.Persistence.Repositories
             return await _dbContext.ProductServiceLines
                 .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         }
+
         public async Task AddAsync(ProductServiceLine productServiceLine, CancellationToken cancellationToken = default)
         {
             await _dbContext.ProductServiceLines.AddAsync(productServiceLine, cancellationToken);
@@ -35,20 +36,26 @@ namespace MasterData.Infrastructure.Persistence.Repositories
             return Task.CompletedTask;
         }
 
-        public async Task<List<ProductServiceLine>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<List<ProductServiceLine>> GetAllAsync(IReadOnlyList<Guid> allowedPslIds, CancellationToken cancellationToken = default)
         {
+            var pslVoList = allowedPslIds.Select(g => new ProductServiceLineId(g)).ToList();
             return await _dbContext.ProductServiceLines
                 .AsNoTracking()
+                .Where(p => pslVoList.Contains(p.Id))
+                .OrderBy(p => p.Name)
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<(IReadOnlyList<ProductServiceLine> ProductServiceLines, int TotalCount)> GetPagedAsync(
             int pageNumber,
             int pageSize,
+            IReadOnlyList<Guid> allowedPslIds,
             string? searchTerm = null,
             CancellationToken cancellationToken = default)
         {
-            var query = _dbContext.ProductServiceLines.AsNoTracking();
+            var pslVoList = allowedPslIds.Select(g => new ProductServiceLineId(g)).ToList();
+            var query = _dbContext.ProductServiceLines.AsNoTracking()
+                .Where(p => pslVoList.Contains(p.Id));
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {

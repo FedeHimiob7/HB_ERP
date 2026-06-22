@@ -5,6 +5,9 @@ using Identity.Application.Common.Interfaces;
 using Identity.Application.EventHandlers;
 using Identity.Infrastructure;
 using Identity.Infrastructure.Persistence;
+using Inventory.Application;
+using Inventory.Infrastructure;
+using Inventory.Infrastructure.Persistence;
 using MassTransit;
 using MassTransit.EntityFrameworkCoreIntegration;
 using MasterData.Application;
@@ -49,7 +52,10 @@ namespace WebAPI
                                 .AddIdentityApplication()
                                 //MasterData
                                 .AddMasterDataInfrastructure(builder.Configuration)
-                                .AddMasterDataApplication();
+                                .AddMasterDataApplication()
+                                //Inventory
+                                .AddInventoryInfrastructure(builder.Configuration)
+                                .AddInventoryApplication();
 
                 builder.Services.AddScoped<IPslExistenceChecker, PslExistenceChecker>();
 
@@ -72,6 +78,7 @@ namespace WebAPI
 
                 builder.Services.AddHostedService<MasterDataOutboxPublisher>();
                 builder.Services.AddHostedService<IdentityOutboxPublisher>();
+                builder.Services.AddHostedService<InventoryOutboxPublisher>();
 
                 var origenesPermitidos = builder.Configuration.GetValue<string>("origenesPermitidos")!.Split(",");
 
