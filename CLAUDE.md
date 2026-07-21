@@ -30,11 +30,15 @@ dotnet ef database update        --project src/Modules/Identity/Identity.Infrast
 # MasterData module
 dotnet ef migrations add <Name> --project src/Modules/MasterData/MasterData.Infrastructure --startup-project src/API/WebAPI
 dotnet ef database update        --project src/Modules/MasterData/MasterData.Infrastructure --startup-project src/API/WebAPI
+
+# Inventory module
+dotnet ef migrations add <Name> --project src/Modules/Inventory/Inventory.Infrastructure --startup-project src/API/WebAPI
+dotnet ef database update        --project src/Modules/Inventory/Inventory.Infrastructure --startup-project src/API/WebAPI
 ```
 
 ## Architecture
 
-This is a modular monolith following **DDD + Clean Architecture + CQRS**. There are two modules (`Identity`, `MasterData`) plus a shared kernel.
+This is a modular monolith following **DDD + Clean Architecture + CQRS**. There are three modules (`Identity`, `MasterData`, `Inventory`) plus a shared kernel.
 
 ### Layer structure (same in every module)
 ```
@@ -66,15 +70,15 @@ Modules do **not** reference each other directly. Communication is async:
 - Controllers map `ErrorOr` results to HTTP responses using the `MatchFirst` / `Problem` pattern.
 
 ### Paginación — patrón establecido
-Todas las entidades de MasterData siguen el mismo patrón de paginación:
+Todas las entidades de MasterData e Inventory siguen el mismo patrón de paginación:
 
 **Rutas del controller:**
 - `GET /api/{entity}` → `GetAll` — devuelve la lista completa sin parámetros
 - `GET /api/{entity}/paged` → `GetPaged` — paginado con filtro
 
 **Capas involucradas:**
-1. **APIModels** (`src/API/WebAPI/APIModels/MasterData/{Entity}/Get{Entity}PagedRequest.cs`) — record con `PageNumber`, `PageSize`, `SearchTerm` (y filtros extra si los hay). Se usa como `[FromQuery]` en el controller.
-2. **Domain** (`MasterData.Domain/SearchParametersModel/{Entity}Filter.cs`) — record que hereda de `PaginationFilter` (SharedKernel). Para filtros simples (solo `SearchTerm`) basta con la herencia directa. Para filtros extra (ej. `CountryId`, `IsActive`) se agregan propiedades adicionales.
+1. **APIModels** (`src/API/WebAPI/APIModels/{Module}/{Entity}/Get{Entity}PagedRequest.cs`) — record con `PageNumber`, `PageSize`, `SearchTerm` (y filtros extra si los hay). Se usa como `[FromQuery]` en el controller.
+2. **Domain** (`{Module}.Domain/SearchParametersModel/{Entity}Filter.cs`) — record que hereda de `PaginationFilter` (SharedKernel). Para filtros simples (solo `SearchTerm`) basta con la herencia directa. Para filtros extra (ej. `CountryId`, `IsActive`) se agregan propiedades adicionales.
 3. **Application** — dos queries por entidad:
    - `GetAll{Entity}Query` / `GetAll{Entity}QueryHandler` — llama `GetAllAsync`, devuelve `IReadOnlyList<{Entity}Response>`
    - `Get{Entity}PagedQuery(Filter)` / handler — llama `GetPagedAsync(filter)`, devuelve `Paged{Entity}Result`
@@ -83,7 +87,7 @@ Todas las entidades de MasterData siguen el mismo patrón de paginación:
    - `SearchTerm` → `.Where(e => e.Name.ToLower().Contains(term) || ...)` sobre los campos relevantes
    - Para buscar por nombre de entidad relacionada sin navigation property: `_dbContext.OtherSet.Any(o => o.Id == e.ForeignKeyId && o.Name.ToLower().Contains(term))`
 
-**Entidades con paginación implementada:**
+**Entidades MasterData con paginación implementada:**
 | Entidad | SearchTerm busca en | Filtros extra |
 |---------|-------------------|---------------|
 | `Country` | `Name` | — |
@@ -93,6 +97,17 @@ Todas las entidades de MasterData siguen el mismo patrón de paginación:
 | `ProductServiceLine` | `Name`, `Description` | — |
 | `Unit` | `Name`, `Description` | — |
 | `Tax` | `Name` | `TaxType` |
+
+**Entidades Inventory con paginación implementada:**
+| Entidad | SearchTerm busca en | Filtros extra |
+|---------|-------------------|---------------|
+| `ProductType` | `Name` | — |
+| `ProductCategory` | `Name` | — |
+| `ProductSubCategory` | `Name` | `ProductCategoryId` |
+| `ProductBrand` | `Name` | — |
+| `Warehouse` | `Name` | — |
+| `StorageType` | `Name` | — |
+| `Product` | `Name`, `Code`, `Barcode` | `ProductTypeId`, `ProductCategoryId`, `ProductSubCategoryId`, `ProductBrandId`, `ProductServiceLineId` |
 
 **Nota:** `State` y `City` usan filtros extra con FK + `IsActive`; el resto solo tienen `SearchTerm` heredado de `PaginationFilter`. `ExchangeRate` tiene paginado propio (sin SearchTerm, ordenado por `RegisterDate` desc).
 
@@ -127,7 +142,11 @@ src/
       MasterData.Application/         ← CQRS handlers y validators por entidad; IBCVRateScrapingService
       MasterData.Infrastructure/      ← MasterDataDbContext, repositories, migrations
                                          BCVRateScrapingService, BCVRateSyncWorker (BackgroundService)
-    Inventory/                        ← PRÓXIMO MÓDULO
+    Inventory/
+      Inventory.Domain/               ← ProductType, ProductCategory, ProductSubCategory, ProductBrand,
+                                         Warehouse, StorageType, Product, ProductCodeCounter, ProductPriceHistory
+      Inventory.Application/          ← CQRS handlers y validators por entidad; IInventoryUnitOfWork
+      Inventory.Infrastructure/       ← InventoryDbContext, repositories, migrations
 HB_ERP.SharedKernel/                  ← DDD primitives, interceptors, integration events, ICurrencyConverter
 tests/
 ```
@@ -154,6 +173,21 @@ El JWT generado incluye claims: `sub` (userId), `email`, `unique_name` (firstNam
 | `ExchangeRate` | Tasa de cambio Bs/USD. `Source` enum: `BCV=1`, `Manual=2`. Un registro por cambio de valor. |
 
 Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`), excepto `ExchangeRate` (es inmutable — cada cambio genera un registro nuevo).
+
+### Inventory module — entities
+| Entity | Description |
+|--------|-------------|
+| `ProductType` | Tipo de producto (ej. Bien, Servicio). Catálogo con activación/desactivación. |
+| `ProductCategory` | Categoría del producto. Catálogo con activación/desactivación. |
+| `ProductSubCategory` | Sub-categoría; siempre vinculada a una `ProductCategory`. |
+| `ProductBrand` | Marca del producto. Catálogo con activación/desactivación. |
+| `Warehouse` | Almacén físico. Catálogo con activación/desactivación. |
+| `StorageType` | Tipo de almacenamiento (ej. Estantería, Refrigerado). Catálogo con activación/desactivación. |
+| `Product` | Entidad central del sistema — ver diseño detallado abajo. |
+| `ProductCodeCounter` | Tabla de contadores por PSL + fecha para generar `Product.Code` sin colisiones (usa UPDLOCK). |
+| `ProductPriceHistory` | Child entity de `Product`; registra cada cambio de precios/costos con snapshot completo. |
+
+Todos los aggregates de Inventory implementan activación/desactivación (`IsActive`), excepto `ProductCodeCounter` y `ProductPriceHistory` (son registros inmutables).
 
 ### ExchangeRate — comportamiento especial
 - **`GET /api/exchangerates/current`**: va al BCV en ese momento, guarda en BD si la tasa cambió, devuelve la tasa fresca. Si BCV no responde, devuelve la última tasa guardada (fallback). **El UI siempre usa este endpoint** al abrir cualquier formulario con tasa de cambio.
@@ -190,16 +224,30 @@ El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectur
 
 **No existe** un módulo `CustomersAndSuppliers` — esa decisión fue descartada.
 
-### Alcance del módulo Inventory (en desarrollo)
-Inventory es **netamente de inventario**. Incluye:
-- Catálogo: `ProductType`, `ProductCategory`, `ProductSubCategory`, `ProductBrand`, `Warehouse`, `StorageType`
-- Producto: `Product` — entidad central del sistema (ver sección Product más abajo)
-- Stock por almacén y movimientos internos
+### Módulo Inventory — estado actual
+Inventory es **netamente de inventario**.
+
+#### ✅ Implementado (completo: Domain + Application + Infrastructure + Controller)
+| Entidad | CRUD | Paginado | Notas |
+|---------|------|----------|-------|
+| `ProductType` | ✅ | ✅ | Catálogo simple |
+| `ProductCategory` | ✅ | ✅ | Catálogo simple |
+| `ProductSubCategory` | ✅ | ✅ | Filtro extra: `ProductCategoryId` |
+| `ProductBrand` | ✅ | ✅ | Catálogo simple |
+| `Warehouse` | ✅ | ✅ | Catálogo simple |
+| `StorageType` | ✅ | ✅ | Catálogo simple |
+| `Product` | ✅ | ✅ | Entidad central; ver diseño detallado abajo |
+| `ProductCodeCounter` | — | — | Solo se accede vía `GenerateProductCodeCommand` |
+| `ProductPriceHistory` | — | — | Child entity de Product; se crea automáticamente al actualizar precios |
+
+#### ⏳ Pendiente de implementar
+- Stock por almacén (`ProductStock` / `InventoryMovement`) — un producto puede estar en múltiples almacenes
+- Movimientos internos (entradas, salidas, transferencias)
+- `Equipment` — aggregate separado que referenciará `ProductId`
 
 **No incluye** (pertenecen a otros módulos):
 - `Customer` ni `Supplier` — Inventory no los referencia directamente
 - Compras, ventas, devoluciones, facturación — responsabilidad de `Procurement` y `Sales`
-- `Equipment` — se implementa después de Product; es un aggregate separado que apunta a `ProductId`
 - La integración con órdenes de compra/venta vendrá vía eventos cuando esos módulos existan
 
 ### Product — diseño del aggregate (Inventory)
@@ -209,11 +257,13 @@ Product es la entidad más transversal del sistema (ventas, compras, inventario,
 ```
 IDENTIDAD
   ProductId              VO (Guid)
-  Code                   string, requerido — auto-generado: {YYYYMMDD}-{PSLId}-{correlativo}
-                         editable por el usuario; el formato es referencial
-  ItemNumberByDay        int — correlativo diario (sin patrón draft; se genera al crear)
+  Code                   string, requerido — auto-generado: {Year}{Month}{Day}-{PslNumber}-{DailyCounter}
+                         editable por el usuario. Se genera vía GenerateProductCodeCommand ANTES de crear el producto.
+                         El UI llama a POST /api/products/generate-code?pslId=X, muestra el código prefilled,
+                         el usuario puede editarlo, y lo envía junto con CreateProductCommand.
+  ItemNumberByDay        int — correlativo diario por PSL. Se persiste junto con Code para referencia histórica.
   Barcode                string?
-  ExternalCode           string?  (código de referencia externa — proveedor u otro sistema)
+  ClientCode             string?  (código que asigna el proveedor a este producto)
 
 BÁSICO
   Name                   string, requerido
@@ -290,7 +340,7 @@ Registra cada cambio de precios. Reemplaza el patrón `New/Current/Previous` del
 ```
 
 #### Reglas de negocio clave
-- `Code` se genera en `CreateProductCommandHandler` consultando `MAX(ItemNumberByDay)` del día actual para ese PSL. Sin patrón draft — creación en un solo paso.
+- `Code` se genera mediante `GenerateProductCodeCommand` (endpoint dedicado) **antes** de abrir el formulario de creación. Usa la tabla `ProductCodeCounters` con UPDLOCK para garantizar que dos usuarios simultáneos reciban códigos distintos. El código se envía en `CreateProductCommand` — el handler no lo genera, lo valida y persiste. Sin patrón draft — si el usuario abandona el formulario, el número queda saltado (gap aceptable, igual que un IDENTITY de SQL).
 - Cuando se actualiza `PriceCurrencyId` o `PriceExchangeRate`, Price2-5 quedan bajo la nueva moneda/tasa automáticamente (comparten el mismo bloque).
 - Precios de venta (Price..5) estandarizados en USD. Costo puede ser en cualquier moneda.
 - Conversiones de moneda **solo en Query Handlers** vía `ICurrencyConverter`. Nunca en la entidad.
@@ -314,6 +364,32 @@ No se completa un módulo al 100% antes de pasar al siguiente. Se implementan la
 
 ---
 
+## Premisa de migración de datos (legacy → nuevo sistema)
+
+**El objetivo final es migrar la información del sistema legacy a este sistema nuevo mediante scripts SQL/queries.** Esta premisa es un factor de segundo plano que debe considerarse en cada decisión de diseño, sin que sea un bloqueante para mejorar o cambiar lo necesario.
+
+### Principio general
+- Si hay que mejorar, cambiar o eliminar algo respecto al legacy, se hace — la migración se adapta.
+- Pero siempre evaluar: *¿cuánto trabajo de migración genera este cambio?* Un cambio que rompe 10 tablas necesita más justificación que uno que afecta 1.
+- Los scripts de migración se escriben al final, cuando los módulos estén estables, no durante el desarrollo.
+
+### Implicaciones concretas ya identificadas
+
+#### Código de producto (`Product.Code`)
+El legacy generaba el código como: `{Year}{Month}{Day}-{PSLId_int}-{OfficeBranchId_int}-{lastItemNumber}`
+- `PSLId_int` era el `int` identity del PSL en el legacy.
+- En el nuevo sistema los PSLs tienen `Guid`. El número entero del PSL legacy **debe preservarse** en `ProductCodeCounter.PslSequenceNumber` durante la migración, para que los códigos de productos migrados y los nuevos sean coherentes.
+- Durante la migración se pre-populará `ProductCodeCounters` con: `PslId` (GUID nuevo) + `PslSequenceNumber` (int del legacy) + el MAX de `DailyCounter` por fecha.
+- Los PSLs nuevos (creados después de la migración) reciben el siguiente `PslSequenceNumber` disponible (MAX + 1).
+
+#### PSL (ProductServiceLine)
+Los PSLs ya existen en el nuevo sistema. La migración de productos debe usar la correspondencia `legacy_psl_int_id → new_psl_guid`.
+
+#### OfficeBranch
+Entidad pendiente de implementar. Cuando exista, `ProductCodeCounter` agrega `OfficeBranchSequenceNumber` y el formato del código queda completo: `{Year}{Month}{Day}-{PslNumber}-{OfficeBranchNumber}-{DailyCounter}`. Por ahora el segmento de sucursal se omite del código.
+
+---
+
 ## Key packages
 | Package | Purpose |
 |---------|---------|
@@ -321,7 +397,7 @@ No se completa un módulo al 100% antes de pasar al siguiente. Se implementan la
 | ErrorOr 2 | Result type — use instead of exceptions for business errors |
 | FluentValidation 12 | Command/query validation via MediatR pipeline |
 | MassTransit 9 + RabbitMQ | Async integration events |
-| EF Core 9 | ORM; two separate DbContexts (`IdentityDbContext`, `MasterDataDbContext`) |
+| EF Core 9 | ORM; three separate DbContexts (`IdentityDbContext`, `MasterDataDbContext`, `InventoryDbContext`) |
 | Ardalis.GuardClauses | Input guards in domain constructors |
 | RT.Comb | Sequential GUIDs for PKs |
 | Serilog | Structured logging; writes to SQL Server (`LogErrorHB_ERP` DB) |

@@ -4,6 +4,7 @@ using Inventory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Infrastructure.Migrations
 {
     [DbContext(typeof(InventoryDbContext))]
-    partial class InventoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260626142751_RefactorProductCodeCounterWithReservation")]
+    partial class RefactorProductCodeCounterWithReservation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,13 +75,13 @@ namespace Inventory.Infrastructure.Migrations
                     b.Property<decimal?>("ContentCapacity")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal?>("Cost")
+                    b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<Guid?>("CostCurrencyId")
+                    b.Property<Guid>("CostCurrencyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal?>("CostExchangeRate")
+                    b.Property<decimal>("CostExchangeRate")
                         .HasColumnType("decimal(18,6)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -114,10 +117,6 @@ namespace Inventory.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Model")
-                        .HasMaxLength(75)
-                        .HasColumnType("nvarchar(75)");
-
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -127,7 +126,7 @@ namespace Inventory.Infrastructure.Migrations
                         .HasMaxLength(70)
                         .HasColumnType("nvarchar(70)");
 
-                    b.Property<decimal?>("Price")
+                    b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal?>("Price2")
@@ -142,10 +141,10 @@ namespace Inventory.Infrastructure.Migrations
                     b.Property<decimal?>("Price5")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<Guid?>("PriceCurrencyId")
+                    b.Property<Guid>("PriceCurrencyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal?>("PriceExchangeRate")
+                    b.Property<decimal>("PriceExchangeRate")
                         .HasColumnType("decimal(18,6)");
 
                     b.Property<Guid?>("ProductBrandId")
@@ -512,16 +511,16 @@ namespace Inventory.Infrastructure.Migrations
                             b1.Property<Guid>("ChangedByUserId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<decimal?>("NewCost")
+                            b1.Property<decimal>("NewCost")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<Guid?>("NewCostCurrencyId")
+                            b1.Property<Guid>("NewCostCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<decimal?>("NewCostExchangeRate")
+                            b1.Property<decimal>("NewCostExchangeRate")
                                 .HasColumnType("decimal(18,6)");
 
-                            b1.Property<decimal?>("NewPrice")
+                            b1.Property<decimal>("NewPrice")
                                 .HasColumnType("decimal(18,4)");
 
                             b1.Property<decimal?>("NewPrice2")
@@ -536,22 +535,22 @@ namespace Inventory.Infrastructure.Migrations
                             b1.Property<decimal?>("NewPrice5")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<Guid?>("NewPriceCurrencyId")
+                            b1.Property<Guid>("NewPriceCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<decimal?>("NewPriceExchangeRate")
+                            b1.Property<decimal>("NewPriceExchangeRate")
                                 .HasColumnType("decimal(18,6)");
 
-                            b1.Property<decimal?>("OldCost")
+                            b1.Property<decimal>("OldCost")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<Guid?>("OldCostCurrencyId")
+                            b1.Property<Guid>("OldCostCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<decimal?>("OldCostExchangeRate")
+                            b1.Property<decimal>("OldCostExchangeRate")
                                 .HasColumnType("decimal(18,6)");
 
-                            b1.Property<decimal?>("OldPrice")
+                            b1.Property<decimal>("OldPrice")
                                 .HasColumnType("decimal(18,4)");
 
                             b1.Property<decimal?>("OldPrice2")
@@ -566,10 +565,10 @@ namespace Inventory.Infrastructure.Migrations
                             b1.Property<decimal?>("OldPrice5")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<Guid?>("OldPriceCurrencyId")
+                            b1.Property<Guid>("OldPriceCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<decimal?>("OldPriceExchangeRate")
+                            b1.Property<decimal>("OldPriceExchangeRate")
                                 .HasColumnType("decimal(18,6)");
 
                             b1.Property<Guid>("ProductId")

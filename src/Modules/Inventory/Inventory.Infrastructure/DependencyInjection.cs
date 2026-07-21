@@ -47,6 +47,8 @@ namespace Inventory.Infrastructure
             services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
             services.AddScoped<IProductSubCategoryRepository, ProductSubCategoryRepository>();
             services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<IProductCodeCounterRepository, ProductCodeCounterRepository>();
 
             return services;
         }

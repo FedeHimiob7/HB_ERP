@@ -36,5 +36,7 @@ namespace Inventory.Infrastructure.Persistence
         public DbSet<ProductSubCategory> ProductSubCategories { get; set; }
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<StorageType> StorageTypes { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductCodeCounter> ProductCodeCounters { get; set; }
     }
 }
