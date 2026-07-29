@@ -12,8 +12,7 @@ namespace WebAPI.APIModels.Inventory.Product.Mapper
                 r.TaxList.Select(t => new TaxItemQuery(t.TaxId, t.Rate, t.IsIGTF)).ToList(),
                 r.Profit,
                 r.Commission,
-                r.IsCost,
-                r.Cost);
+                r.IsCost);
 
         public static CreateProductCommand ToCreateCommand(this CreateProductRequest r) =>
             new(r.Code,
@@ -82,14 +81,19 @@ namespace WebAPI.APIModels.Inventory.Product.Mapper
         public static UpdateProductPricesCommand ToUpdatePricesCommand(this UpdateProductPricesRequest r, Guid id) =>
             new(id,
                 r.Cost,
+                r.CostBase,
                 r.CostCurrencyId,
                 r.CostExchangeRate,
                 r.Price,
+                r.PriceBase,
                 r.PriceCurrencyId,
                 r.PriceExchangeRate,
                 r.Price2,
                 r.Price3,
                 r.Price4,
-                r.Price5);
+                r.Price5,
+                r.PurchaseTaxIds,
+                r.SaleTaxIds,
+                r.ProfitMargin);
     }
 }

@@ -8,6 +8,5 @@ namespace Inventory.Application.Products.Queries.CalculatePrices
         List<TaxItemQuery> TaxList,
         decimal? Profit,
         decimal? Commission,
-        bool IsCost,
-        decimal? Cost) : IRequest<ErrorOr<PriceCalculationResult>>;
+        bool IsCost) : IRequest<ErrorOr<PriceCalculationResult>>;
 }

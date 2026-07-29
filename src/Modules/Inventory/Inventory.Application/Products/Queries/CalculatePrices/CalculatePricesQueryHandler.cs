@@ -37,7 +37,7 @@ namespace Inventory.Application.Products.Queries.CalculatePrices
                     : request.BaseAmount;
 
                 return Task.FromResult<ErrorOr<PriceCalculationResult>>(
-                    new PriceCalculationResult(cost, 0, 0, 0, 0, 0));
+                    new PriceCalculationResult(cost, request.BaseAmount, 0, 0, 0, 0, 0, null));
             }
 
             decimal commission = request.Commission ?? 0;
@@ -55,11 +55,13 @@ namespace Inventory.Application.Products.Queries.CalculatePrices
 
             var result = new PriceCalculationResult(
                 Cost:   0,
+                CostBase: null,
                 Price1: Finalize(price1Base),
                 Price2: Finalize(price2Base),
                 Price3: Finalize(price3Base),
                 Price4: Finalize(price4Base),
-                Price5: request.Cost ?? 0);
+                Price5: request.BaseAmount,
+                PriceBase: Math.Round(price1Base, 2));
 
             return Task.FromResult<ErrorOr<PriceCalculationResult>>(result);
         }

@@ -268,7 +268,7 @@ IDENTIDAD
 BÁSICO
   Name                   string, requerido
   Description            string?
-  ModelName              string?
+  Model                  string?
 
 CLASIFICACIÓN (IDs únicamente, sin navigation properties)
   ProductServiceLineId   requerido
@@ -312,7 +312,7 @@ FÍSICO / EMPAQUE
   Volume                 decimal?
   ContentCapacity        decimal?  (capacidad del envase/contenedor)
 
-COMPRA (info referencial para Procurement)
+COMPRA (info referencial para Procurement) — DISEÑADO, AÚN NO IMPLEMENTADO en el aggregate
   PurchaseDescription    string?
   DaysToDeliver          int?
   ImportationCost        decimal?

@@ -11,21 +11,28 @@ namespace Inventory.Domain.Entities
             ProductId productId,
             Guid changedByUserId,
             decimal? oldCost,
+            decimal? oldCostBase,
             CurrencyId? oldCostCurrencyId,
             decimal? oldCostExchangeRate,
             decimal? newCost,
+            decimal? newCostBase,
             CurrencyId? newCostCurrencyId,
             decimal? newCostExchangeRate,
             decimal? oldPrice,
+            decimal? oldPriceBase,
             CurrencyId? oldPriceCurrencyId,
             decimal? oldPriceExchangeRate,
             decimal? newPrice,
+            decimal? newPriceBase,
             CurrencyId? newPriceCurrencyId,
             decimal? newPriceExchangeRate,
             decimal? oldPrice2, decimal? newPrice2,
             decimal? oldPrice3, decimal? newPrice3,
             decimal? oldPrice4, decimal? newPrice4,
-            decimal? oldPrice5, decimal? newPrice5)
+            decimal? oldPrice5, decimal? newPrice5,
+            decimal? oldPurchaseTaxRate, decimal? newPurchaseTaxRate,
+            decimal? oldSaleTaxRate, decimal? newSaleTaxRate,
+            decimal? oldProfitMargin, decimal? newProfitMargin)
         {
             Id = Guid.NewGuid();
             ProductId = productId;
@@ -33,16 +40,20 @@ namespace Inventory.Domain.Entities
             ChangedByUserId = changedByUserId;
 
             OldCost = oldCost;
+            OldCostBase = oldCostBase;
             OldCostCurrencyId = oldCostCurrencyId;
             OldCostExchangeRate = oldCostExchangeRate;
             NewCost = newCost;
+            NewCostBase = newCostBase;
             NewCostCurrencyId = newCostCurrencyId;
             NewCostExchangeRate = newCostExchangeRate;
 
             OldPrice = oldPrice;
+            OldPriceBase = oldPriceBase;
             OldPriceCurrencyId = oldPriceCurrencyId;
             OldPriceExchangeRate = oldPriceExchangeRate;
             NewPrice = newPrice;
+            NewPriceBase = newPriceBase;
             NewPriceCurrencyId = newPriceCurrencyId;
             NewPriceExchangeRate = newPriceExchangeRate;
 
@@ -50,6 +61,14 @@ namespace Inventory.Domain.Entities
             OldPrice3 = oldPrice3; NewPrice3 = newPrice3;
             OldPrice4 = oldPrice4; NewPrice4 = newPrice4;
             OldPrice5 = oldPrice5; NewPrice5 = newPrice5;
+
+            OldPurchaseTaxRate = oldPurchaseTaxRate;
+            NewPurchaseTaxRate = newPurchaseTaxRate;
+            OldSaleTaxRate = oldSaleTaxRate;
+            NewSaleTaxRate = newSaleTaxRate;
+
+            OldProfitMargin = oldProfitMargin;
+            NewProfitMargin = newProfitMargin;
         }
 
         public Guid Id { get; private set; }
@@ -58,16 +77,20 @@ namespace Inventory.Domain.Entities
         public Guid ChangedByUserId { get; private set; }
 
         public decimal? OldCost { get; private set; }
+        public decimal? OldCostBase { get; private set; }
         public CurrencyId? OldCostCurrencyId { get; private set; }
         public decimal? OldCostExchangeRate { get; private set; }
         public decimal? NewCost { get; private set; }
+        public decimal? NewCostBase { get; private set; }
         public CurrencyId? NewCostCurrencyId { get; private set; }
         public decimal? NewCostExchangeRate { get; private set; }
 
         public decimal? OldPrice { get; private set; }
+        public decimal? OldPriceBase { get; private set; }
         public CurrencyId? OldPriceCurrencyId { get; private set; }
         public decimal? OldPriceExchangeRate { get; private set; }
         public decimal? NewPrice { get; private set; }
+        public decimal? NewPriceBase { get; private set; }
         public CurrencyId? NewPriceCurrencyId { get; private set; }
         public decimal? NewPriceExchangeRate { get; private set; }
 
@@ -79,5 +102,13 @@ namespace Inventory.Domain.Entities
         public decimal? NewPrice4 { get; private set; }
         public decimal? OldPrice5 { get; private set; }
         public decimal? NewPrice5 { get; private set; }
+
+        public decimal? OldPurchaseTaxRate { get; private set; }
+        public decimal? NewPurchaseTaxRate { get; private set; }
+        public decimal? OldSaleTaxRate { get; private set; }
+        public decimal? NewSaleTaxRate { get; private set; }
+
+        public decimal? OldProfitMargin { get; private set; }
+        public decimal? NewProfitMargin { get; private set; }
     }
 }

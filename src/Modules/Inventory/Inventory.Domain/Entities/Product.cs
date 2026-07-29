@@ -73,11 +73,13 @@ namespace Inventory.Domain.Entities
 
         // Costo
         public decimal? Cost { get; private set; }
+        public decimal? CostBase { get; private set; }
         public CurrencyId? CostCurrencyId { get; private set; }
         public decimal? CostExchangeRate { get; private set; }
 
         // Precio principal (Price1) — define moneda y tasa para todos los precios
         public decimal? Price { get; private set; }
+        public decimal? PriceBase { get; private set; }
         public CurrencyId? PriceCurrencyId { get; private set; }
         public decimal? PriceExchangeRate { get; private set; }
 
@@ -220,15 +222,24 @@ namespace Inventory.Domain.Entities
         public ErrorOr<Success> UpdatePrices(
             Guid changedByUserId,
             decimal? newCost,
+            decimal? newCostBase,
             CurrencyId? newCostCurrencyId,
             decimal? newCostExchangeRate,
             decimal? newPrice,
+            decimal? newPriceBase,
             CurrencyId? newPriceCurrencyId,
             decimal? newPriceExchangeRate,
-            decimal? newPrice2 = null,
-            decimal? newPrice3 = null,
-            decimal? newPrice4 = null,
-            decimal? newPrice5 = null)
+            decimal? newPrice2,
+            decimal? newPrice3,
+            decimal? newPrice4,
+            decimal? newPrice5,
+            IEnumerable<TaxId> newPurchaseTaxIds,
+            IEnumerable<TaxId> newSaleTaxIds,
+            decimal? oldPurchaseTaxRate,
+            decimal? newPurchaseTaxRate,
+            decimal? oldSaleTaxRate,
+            decimal? newSaleTaxRate,
+            decimal? newProfitMargin)
         {
             if (newCost.HasValue && newCost < 0)
                 return ProductErrors.NegativeCost;
@@ -239,27 +250,35 @@ namespace Inventory.Domain.Entities
             var history = new ProductPriceHistory(
                 Id,
                 changedByUserId,
-                Cost, CostCurrencyId, CostExchangeRate,
-                newCost, newCostCurrencyId, newCostExchangeRate,
-                Price, PriceCurrencyId, PriceExchangeRate,
-                newPrice, newPriceCurrencyId, newPriceExchangeRate,
+                Cost, CostBase, CostCurrencyId, CostExchangeRate,
+                newCost, newCostBase, newCostCurrencyId, newCostExchangeRate,
+                Price, PriceBase, PriceCurrencyId, PriceExchangeRate,
+                newPrice, newPriceBase, newPriceCurrencyId, newPriceExchangeRate,
                 Price2, newPrice2,
                 Price3, newPrice3,
                 Price4, newPrice4,
-                Price5, newPrice5);
+                Price5, newPrice5,
+                oldPurchaseTaxRate, newPurchaseTaxRate,
+                oldSaleTaxRate, newSaleTaxRate,
+                ProfitMargin, newProfitMargin);
 
             _priceHistory.Add(history);
 
             Cost = newCost;
+            CostBase = newCostBase;
             CostCurrencyId = newCostCurrencyId;
             CostExchangeRate = newCostExchangeRate;
             Price = newPrice;
+            PriceBase = newPriceBase;
             PriceCurrencyId = newPriceCurrencyId;
             PriceExchangeRate = newPriceExchangeRate;
             Price2 = newPrice2;
             Price3 = newPrice3;
             Price4 = newPrice4;
             Price5 = newPrice5;
+            ProfitMargin = newProfitMargin;
+
+            SetTaxes(newPurchaseTaxIds, newSaleTaxIds);
 
             return Result.Success;
         }

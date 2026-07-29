@@ -7,8 +7,7 @@ namespace WebAPI.APIModels.Inventory.Product
         List<TaxItemRequest> TaxList,
         decimal? Profit,
         decimal? Commission,
-        bool IsCost,
-        decimal? Cost);
+        bool IsCost);
 
     public record TaxItemRequest(Guid TaxId, decimal Rate, bool IsIGTF);
 }

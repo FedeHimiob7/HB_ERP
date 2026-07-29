@@ -54,6 +54,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
             builder.Property(x => x.IsStored).IsRequired();
 
             builder.Property(x => x.Cost).HasColumnType("decimal(18,4)");
+            builder.Property(x => x.CostBase).HasColumnType("decimal(18,4)");
             builder.Property(x => x.CostCurrencyId)
                 .HasConversion(
                     id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -61,6 +62,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
             builder.Property(x => x.CostExchangeRate).HasColumnType("decimal(18,6)");
 
             builder.Property(x => x.Price).HasColumnType("decimal(18,4)");
+            builder.Property(x => x.PriceBase).HasColumnType("decimal(18,4)");
             builder.Property(x => x.PriceCurrencyId)
                 .HasConversion(
                     id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -117,6 +119,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
                 ph.Property(x => x.ChangedByUserId).IsRequired();
 
                 ph.Property(x => x.OldCost).HasColumnType("decimal(18,4)");
+                ph.Property(x => x.OldCostBase).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.OldCostCurrencyId)
                     .HasConversion(
                         id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -124,6 +127,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
                 ph.Property(x => x.OldCostExchangeRate).HasColumnType("decimal(18,6)");
 
                 ph.Property(x => x.NewCost).HasColumnType("decimal(18,4)");
+                ph.Property(x => x.NewCostBase).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.NewCostCurrencyId)
                     .HasConversion(
                         id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -131,6 +135,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
                 ph.Property(x => x.NewCostExchangeRate).HasColumnType("decimal(18,6)");
 
                 ph.Property(x => x.OldPrice).HasColumnType("decimal(18,4)");
+                ph.Property(x => x.OldPriceBase).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.OldPriceCurrencyId)
                     .HasConversion(
                         id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -138,6 +143,7 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
                 ph.Property(x => x.OldPriceExchangeRate).HasColumnType("decimal(18,6)");
 
                 ph.Property(x => x.NewPrice).HasColumnType("decimal(18,4)");
+                ph.Property(x => x.NewPriceBase).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.NewPriceCurrencyId)
                     .HasConversion(
                         id => id.HasValue ? id.Value.Value : (Guid?)null,
@@ -152,6 +158,14 @@ namespace Inventory.Infrastructure.Persistence.EntitiesConfiguration
                 ph.Property(x => x.NewPrice4).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.OldPrice5).HasColumnType("decimal(18,4)");
                 ph.Property(x => x.NewPrice5).HasColumnType("decimal(18,4)");
+
+                ph.Property(x => x.OldPurchaseTaxRate).HasColumnType("decimal(9,4)");
+                ph.Property(x => x.NewPurchaseTaxRate).HasColumnType("decimal(9,4)");
+                ph.Property(x => x.OldSaleTaxRate).HasColumnType("decimal(9,4)");
+                ph.Property(x => x.NewSaleTaxRate).HasColumnType("decimal(9,4)");
+
+                ph.Property(x => x.OldProfitMargin).HasColumnType("decimal(18,4)");
+                ph.Property(x => x.NewProfitMargin).HasColumnType("decimal(18,4)");
             });
 
             builder.HasIndex(x => new { x.Code, x.ProductServiceLineId }).IsUnique();

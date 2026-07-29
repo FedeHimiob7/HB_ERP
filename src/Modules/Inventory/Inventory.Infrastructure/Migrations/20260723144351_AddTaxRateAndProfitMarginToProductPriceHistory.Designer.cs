@@ -4,6 +4,7 @@ using Inventory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Inventory.Infrastructure.Migrations
 {
     [DbContext(typeof(InventoryDbContext))]
-    partial class InventoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723144351_AddTaxRateAndProfitMarginToProductPriceHistory")]
+    partial class AddTaxRateAndProfitMarginToProductPriceHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -73,9 +76,6 @@ namespace Inventory.Infrastructure.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal?>("Cost")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("CostBase")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid?>("CostCurrencyId")
@@ -143,9 +143,6 @@ namespace Inventory.Infrastructure.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal?>("Price5")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("PriceBase")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<Guid?>("PriceCurrencyId")
@@ -521,9 +518,6 @@ namespace Inventory.Infrastructure.Migrations
                             b1.Property<decimal?>("NewCost")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<decimal?>("NewCostBase")
-                                .HasColumnType("decimal(18,4)");
-
                             b1.Property<Guid?>("NewCostCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
@@ -545,9 +539,6 @@ namespace Inventory.Infrastructure.Migrations
                             b1.Property<decimal?>("NewPrice5")
                                 .HasColumnType("decimal(18,4)");
 
-                            b1.Property<decimal?>("NewPriceBase")
-                                .HasColumnType("decimal(18,4)");
-
                             b1.Property<Guid?>("NewPriceCurrencyId")
                                 .HasColumnType("uniqueidentifier");
 
@@ -564,9 +555,6 @@ namespace Inventory.Infrastructure.Migrations
                                 .HasColumnType("decimal(9,4)");
 
                             b1.Property<decimal?>("OldCost")
-                                .HasColumnType("decimal(18,4)");
-
-                            b1.Property<decimal?>("OldCostBase")
                                 .HasColumnType("decimal(18,4)");
 
                             b1.Property<Guid?>("OldCostCurrencyId")
@@ -588,9 +576,6 @@ namespace Inventory.Infrastructure.Migrations
                                 .HasColumnType("decimal(18,4)");
 
                             b1.Property<decimal?>("OldPrice5")
-                                .HasColumnType("decimal(18,4)");
-
-                            b1.Property<decimal?>("OldPriceBase")
                                 .HasColumnType("decimal(18,4)");
 
                             b1.Property<Guid?>("OldPriceCurrencyId")
