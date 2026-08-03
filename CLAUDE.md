@@ -56,6 +56,7 @@ All domain entities extend `AggregateRoot<TId>`. Key primitives:
 - `PublishDomainEventsInterceptor` — fires domain events via MediatR on `SaveChangesAsync`
 - Integration events live in `HB_ERP.SharedKernel/IntegrationEvents/` and are shared across modules
 - `ICurrencyConverter` / `CurrencyConverter` — injectable, stateless, registered as Singleton. Converts VES↔USD↔EUR. Used **only in Query Handlers**, never in domain entities. `ToUSD(amount, currencyCode, exchangeRate)` / `FromUSD(amountUSD, currencyCode, exchangeRate)`.
+- `IFiscalClock` / `FiscalClock` — injectable, registered as Singleton. Expone `UtcNow`, `VenezuelaNow`, `VenezuelaToday` (offset fijo UTC-4, sin DST). Se usa para que toda fecha fiscal (`ExchangeRate.RegisterDate`, horarios de `BCVRateSyncWorker`, y en el futuro cualquier documento fiscal) refleje el calendario de Venezuela y no la hora del servidor. Los command handlers inyectan `IFiscalClock` y pasan `_fiscalClock.VenezuelaNow` a la entidad — la entidad nunca llama `DateTime.UtcNow` internamente, recibe la fecha como parámetro del caller.
 
 ### Cross-module communication
 Modules do **not** reference each other directly. Communication is async:
@@ -210,9 +211,11 @@ No crear domain event handlers en Identity para lógica de cleanup — serán c�
 
 ## Plan de migración y módulos futuros
 
-El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectura completa del sistema. Decisiones clave ya tomadas:
+> **⚠️ REDIRECCIONADO.** El rumbo activo del proyecto está en `FISCAL_ROADMAP.md` (raíz del repo): el objetivo ya no es reconstruir los 12 módulos completos del legacy, sino un **Sistema de Facturación Homologado** conforme a la Providencia SENIAT 2024/000121 (ver `docs/Memoria_Descriptiva_Sistema_Facturacion_Homologado.pdf`). El contenido de esta sección y de `MIGRATION_PLAN.md` se conserva como **análisis histórico del legacy** (los modelos, vicios y equivalencias siguen siendo válidos), pero el orden de implementación, los módulos vigentes y las decisiones de diseño activas están en `FISCAL_ROADMAP.md`. En particular, la decisión de `Customer`/`Supplier` separados de abajo **fue revertida** — ver D-2 en `FISCAL_ROADMAP.md` (ahora `ThirdParty` unificado).
 
-### Módulos planificados y dónde viven las entidades clave
+El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectura completa del sistema legacy. Decisiones que se tomaron en su momento (ver nota de redirección arriba antes de asumir que siguen vigentes):
+
+### Módulos planificados y dónde viven las entidades clave (histórico — ver nota de redirección arriba)
 | Entidad | Módulo | Razón |
 |---------|--------|-------|
 | `Customer` | `Sales` | Cliente es un concepto de ventas |
@@ -222,7 +225,7 @@ El archivo `MIGRATION_PLAN.md` en la raíz del proyecto documenta la arquitectur
 | `SaleOrder`, POS | `Sales` | Todo el flujo de venta |
 | `PurchaseOrder` | `Procurement` | Todo el flujo de compra |
 
-**No existe** un módulo `CustomersAndSuppliers` — esa decisión fue descartada.
+**No existe** un módulo `CustomersAndSuppliers` — esa decisión fue descartada *(histórico: ahora revertida, ver `FISCAL_ROADMAP.md` D-2 — `ThirdParty` unificado con `Customer`/`Supplier` como roles)*.
 
 ### Módulo Inventory — estado actual
 Inventory es **netamente de inventario**.
@@ -283,12 +286,14 @@ FLAGS
   IsStored               bool  (tiene stock físico en almacén)
 
 COSTO (puede estar en cualquier moneda — depende del proveedor)
-  Cost                   decimal
+  Cost                   decimal        ← costo final, con impuestos ya aplicados (lo que se persiste como "Cost")
+  CostBase               decimal?       ← monto base sin impuestos (el que el usuario ingresa/edita)
   CostCurrencyId         CurrencyId
   CostExchangeRate       decimal  (tasa BCV vigente cuando se seteó)
 
 PRECIO PRINCIPAL
-  Price                  decimal        ← Price1, precio base de venta
+  Price                  decimal        ← Price1, precio final de venta (con impuestos aplicados)
+  PriceBase              decimal?       ← monto base de Price1 sin impuestos
   PriceCurrencyId        CurrencyId     ← moneda de TODOS los precios (Price1..5)
   PriceExchangeRate      decimal        ← tasa de TODOS los precios (Price1..5)
 
@@ -332,11 +337,14 @@ HISTORIAL
 Registra cada cambio de precios. Reemplaza el patrón `New/Current/Previous` del legado.
 ```
   ProductId, ChangedAt, ChangedByUserId
-  OldCost, OldCostCurrencyId, OldCostExchangeRate
-  NewCost, NewCostCurrencyId, NewCostExchangeRate
-  OldPrice, OldPriceCurrencyId, OldPriceExchangeRate
-  NewPrice, NewPriceCurrencyId, NewPriceExchangeRate
+  OldCost, OldCostBase, OldCostCurrencyId, OldCostExchangeRate
+  NewCost, NewCostBase, NewCostCurrencyId, NewCostExchangeRate
+  OldPrice, OldPriceBase, OldPriceCurrencyId, OldPriceExchangeRate
+  NewPrice, NewPriceBase, NewPriceCurrencyId, NewPriceExchangeRate
   OldPrice2..5, NewPrice2..5
+  OldPurchaseTaxRate, NewPurchaseTaxRate   (suma de tasas de _purchaseTaxIds antes/después)
+  OldSaleTaxRate, NewSaleTaxRate           (suma de tasas de _saleTaxIds antes/después)
+  OldProfitMargin, NewProfitMargin
 ```
 
 #### Reglas de negocio clave
@@ -345,6 +353,8 @@ Registra cada cambio de precios. Reemplaza el patrón `New/Current/Previous` del
 - Precios de venta (Price..5) estandarizados en USD. Costo puede ser en cualquier moneda.
 - Conversiones de moneda **solo en Query Handlers** vía `ICurrencyConverter`. Nunca en la entidad.
 - `[NotMapped]` computados del legado van a DTOs en Application, nunca al dominio.
+- `Cost`/`Price` (final, con impuestos) vs `CostBase`/`PriceBase` (monto neto sin impuestos): `CalculatePricesQuery` calcula ambos — `*Base` es el monto antes de impuestos, `Cost`/`Price1` es el resultado ya con impuestos aplicados. El IGTF se aplica de forma compuesta, sobre el monto que ya incluye los impuestos regulares (no IGTF), no sobre el monto base.
+- `UpdateProductPricesCommand` / `Product.UpdatePrices` actualiza en un solo paso: costo, precios (Price..5, base y final), `PurchaseTaxIds`/`SaleTaxIds` (vía `SetTaxes`) y `ProfitMargin`. El handler resuelve las tasas de impuesto antes/después (`ITaxRepository.GetAllAsync` + suma de `Rate` por los IDs) para dejar registro en `ProductPriceHistory`.
 
 #### Propiedades diferidas a otros módulos
 | Propiedad legado | Módulo destino |
@@ -390,6 +400,51 @@ Entidad pendiente de implementar. Cuando exista, `ProductCodeCounter` agrega `Of
 
 ---
 
+## Testing
+
+Estándar de estructura para proyectos de test .NET en este repo:
+
+**SharedKernel — caso especial (no sigue el patrón de módulos):** `HB_ERP.SharedKernel.Tests` es un `.csproj`
+**separado**, anidado físicamente dentro de `HB_ERP.SharedKernel/`:
+```
+HB_ERP.SharedKernel/
+  HB_ERP.SharedKernel.csproj
+  HB_ERP.SharedKernel.Tests/
+    HB_ERP.SharedKernel.Tests.csproj
+```
+En el `.sln`, ambos quedan agrupados bajo una carpeta de solución "SharedKernel" (creada en Visual Studio,
+no confundir con anidado físico).
+
+**Cada módulo** (`MasterData`, `Inventory`, `Identity`, futuros): una carpeta `Tests/` dentro del módulo, con
+**tres proyectos de nombre corto** (sin prefijo del módulo, ya implícito por la ruta):
+```
+src/Modules/{Modulo}/
+  {Modulo}.Domain/
+  {Modulo}.Application/
+  {Modulo}.Infrastructure/
+  Tests/
+    Domain.Tests/
+    Application.Tests/
+    Infrastructure.Tests/
+```
+**Estado actual:** `MasterData` e `Inventory` ya tienen `Domain.Tests` (cubriendo `Tax`, `ExchangeRate`, `Product`).
+`Identity` todavía no tiene ningún proyecto de test. `Application.Tests`/`Infrastructure.Tests` no existen
+todavía en ningún módulo.
+
+**Convenciones de código:**
+- Framework: **xUnit** puro (sin MSTest/NUnit). Las clases de test no llevan atributo de clase (`[TestClass]`
+  no existe en xUnit); los métodos usan `[Fact]` (caso simple) o `[Theory]` + `[InlineData]`/`[MemberData]`/
+  `[ClassData]` (parametrizado).
+- Toda clase de test debe declararse `sealed` (nunca se hereda; comunica intención y evita herencias
+  accidentales).
+- Cada entidad y cada método nuevo debe llevar su prueba unitaria en el proyecto de test de la capa
+  correspondiente — expectativa permanente del flujo de trabajo, no algo puntual.
+- Al anidar un proyecto de test dentro de la carpeta del proyecto que testea (caso SharedKernel), hay que
+  excluir esa subcarpeta del globbing del `.csproj` padre (`<Compile Remove="HB_ERP.SharedKernel.Tests\**" />`
+  + `EmbeddedResource`/`None` iguales) — si no, el SDK de .NET intenta compilar los archivos del proyecto de
+  test anidado dentro del ensamblado principal y falla con errores de atributos duplicados. No aplica al
+  patrón de módulos (`Tests/` es sibling de `{Modulo}.Domain/`, no anidado dentro).
+
 ## Key packages
 | Package | Purpose |
 |---------|---------|
@@ -401,3 +456,4 @@ Entidad pendiente de implementar. Cuando exista, `ProductCodeCounter` agrega `Of
 | Ardalis.GuardClauses | Input guards in domain constructors |
 | RT.Comb | Sequential GUIDs for PKs |
 | Serilog | Structured logging; writes to SQL Server (`LogErrorHB_ERP` DB) |
+| xUnit 2.9 | Unit testing framework (ver sección Testing) |

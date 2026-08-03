@@ -16,6 +16,7 @@ namespace HB_ERP.SharedKernel.Infrastructure
         {
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+            services.AddSingleton<IFiscalClock, FiscalClock>();
             services.AddScoped<UpdateAuditableEntitiesInterceptor>();
             services.AddScoped<PublishDomainEventsInterceptor>();
 

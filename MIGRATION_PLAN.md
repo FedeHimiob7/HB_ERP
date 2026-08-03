@@ -1,5 +1,7 @@
 # Migration Plan — LAExportGroup ERP
 
+> **⚠️ HISTÓRICO / SUPERSEDED.** Este documento describe el plan original de reconstruir los 12 módulos completos del legacy. El proyecto fue redireccionado hacia un **Sistema de Facturación Homologado** (Providencia SENIAT 2024/000121) — el roadmap activo, las prioridades y las decisiones de diseño vigentes están en `FISCAL_ROADMAP.md` (raíz del repo). El análisis del legacy que sigue abajo (arquitectura, vicios detectados, entidades y equivalencias por módulo) **sigue siendo válido como referencia** para entender el legacy y para la futura sincronización con el sistema administrativo actual, pero el orden de implementación y el destino final de cada módulo ya no son los de este documento — ver la tabla "Destino de los módulos del plan anterior" en `FISCAL_ROADMAP.md`.
+
 ## Resumen ejecutivo
 
 El sistema legacy es un **monolito por capas técnicas** (.NET Core 3.1) con cinco proyectos (`PublicInterface`, `Service`, `Data`, `DB.Core`, `Util`). Todo el dominio comparte **un único `ApplicationDbContext`** con ~110 entidades, una **única tabla de migraciones** y un esquema SQL Server (`lauser`). La organización por carpetas (`SAC/`, `Inventory/`, `InternalPOS/`, `HumanResources/`, `A2Sync/`, `PurchaseOrderIntegrated/`) ya insinúa los **bounded contexts** reales, pero no hay aislamiento: las entidades se referencian libremente entre dominios por FK directa (p. ej. `InventoryTransacction` apunta a `Clients`, `Providers`, `Employee`, `SaleOrder`, `CashAdvance`, `ProductServiceLine` y a sí misma).
@@ -360,14 +362,16 @@ Los principales vicios detectados:
 
 | Módulo | Estado | Notas |
 |--------|--------|-------|
-| IdentityAccess | 🔄 En progreso | Módulo `Identity` — Users, Roles, SystemActions con JWT, CQRS y permisos granulares. Pendiente: Form, Module, FormAction, RoleFormAction |
-| MasterData (Catalog) | 🔄 En progreso | Módulo `MasterData` — Currency, ProductServiceLine, Country, State, Unit. Pendiente: City, Tax, SystemParameter, CompanyBranch, ExchangeRate |
+| IdentityAccess | 🔄 En progreso | Módulo `Identity` — User, Role, SystemAction con JWT, CQRS y permisos granulares (reemplaza el modelo legacy Form/Action/FormAction por permisos tipo `"products.create"`). Pendiente: `Module`/navegación de UI si se necesita |
+| MasterData (Catalog) | ✅ Completo (catálogo base) | Country, State, City, Currency, ProductServiceLine, Unit, Tax, ExchangeRate — todos con CRUD + paginación. Pendiente: `SystemParameter`, `CompanyBranch`/`OfficeBranch` |
 | FileManagement & Notifications | ⬜ Pendiente | — |
 | HumanResources | ⬜ Pendiente | — |
-| Inventory | ⬜ Pendiente | — |
+| Inventory | 🔄 En progreso | Catálogo completo: ProductType, ProductCategory, ProductSubCategory, ProductBrand, Warehouse, StorageType + `Product` (aggregate central) con `ProductCodeCounter` y `ProductPriceHistory`. Pendiente: stock por almacén (`ProductStock`/`InventoryMovement`), `Equipment` |
 | Logistics | ⬜ Pendiente | — |
 | SAC (Contracts & Valuations) | ⬜ Pendiente | — |
 | Procurement | ⬜ Pendiente | Incluye entidad Supplier y ProcurementResponsible |
 | Sales | ⬜ Pendiente | Incluye entidad Customer + POS |
 | Finance | ⬜ Pendiente | — |
 | A2Sync | ⬜ Pendiente | — |
+
+**Nota:** esta tabla refleja el estado de los módulos del nuevo sistema (Strangler Fig), no la migración de datos legacy→nuevo en sí (ver sección "Premisa de migración de datos" en `CLAUDE.md`). Los scripts SQL de migración de datos se escriben al final, cuando los módulos estén estables.

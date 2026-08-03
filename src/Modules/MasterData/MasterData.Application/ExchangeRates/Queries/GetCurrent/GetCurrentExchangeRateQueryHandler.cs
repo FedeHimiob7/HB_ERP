@@ -1,4 +1,5 @@
 using ErrorOr;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using MasterData.Application.ExchangeRates.Models;
 using MasterData.Application.Interfaces;
 using MasterData.Domain.DomainErrors;
@@ -14,15 +15,18 @@ namespace MasterData.Application.ExchangeRates.Queries.GetCurrent
         private readonly IExchangeRateRepository _repository;
         private readonly IBCVRateScrapingService _scrapingService;
         private readonly IMasterDataUnitOfWork _unitOfWork;
+        private readonly IFiscalClock _fiscalClock;
 
         public GetCurrentExchangeRateQueryHandler(
             IExchangeRateRepository repository,
             IBCVRateScrapingService scrapingService,
-            IMasterDataUnitOfWork unitOfWork)
+            IMasterDataUnitOfWork unitOfWork,
+            IFiscalClock fiscalClock)
         {
             _repository = repository;
             _scrapingService = scrapingService;
             _unitOfWork = unitOfWork;
+            _fiscalClock = fiscalClock;
         }
 
         public async Task<ErrorOr<ExchangeRateResponse>> Handle(GetCurrentExchangeRateQuery request, CancellationToken cancellationToken)
@@ -35,7 +39,7 @@ namespace MasterData.Application.ExchangeRates.Queries.GetCurrent
 
                 if (latest is null || latest.Rate != fetchedRate)
                 {
-                    var createResult = ExchangeRate.Create(fetchedRate, ExchangeRateSource.BCV);
+                    var createResult = ExchangeRate.Create(fetchedRate, ExchangeRateSource.BCV, _fiscalClock.VenezuelaNow);
                     if (createResult.IsError) return createResult.Errors;
 
                     await _repository.AddAsync(createResult.Value, cancellationToken);

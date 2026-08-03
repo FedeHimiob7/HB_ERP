@@ -1,3 +1,4 @@
+using HB_ERP.SharedKernel.Domain.Primitives;
 using MasterData.Application.ExchangeRates.Commands.SyncFromBCV;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,15 +9,17 @@ namespace MasterData.Infrastructure.BackgroundServices
 {
     internal sealed class BCVRateSyncWorker : BackgroundService
     {
-        // 12:00 y 18:00 hora local del servidor
+        // 12:00 y 18:00 hora Venezuela (no la hora local del servidor, que puede correr en UTC)
         private static readonly TimeOnly[] ScheduledTimes = [new(12, 0), new(18, 0)];
 
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IFiscalClock _fiscalClock;
         private readonly ILogger<BCVRateSyncWorker> _logger;
 
-        public BCVRateSyncWorker(IServiceScopeFactory scopeFactory, ILogger<BCVRateSyncWorker> logger)
+        public BCVRateSyncWorker(IServiceScopeFactory scopeFactory, IFiscalClock fiscalClock, ILogger<BCVRateSyncWorker> logger)
         {
             _scopeFactory = scopeFactory;
+            _fiscalClock = fiscalClock;
             _logger = logger;
         }
 
@@ -25,7 +28,7 @@ namespace MasterData.Infrastructure.BackgroundServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 var delay = CalculateDelayToNext();
-                var nextRun = DateTime.Now.Add(delay);
+                var nextRun = _fiscalClock.VenezuelaNow.Add(delay);
 
                 _logger.LogInformation("BCVRateSyncWorker: próxima sincronización a las {NextRun:HH:mm} ({Delay:hh\\:mm} horas).",
                     nextRun, delay);
@@ -63,9 +66,9 @@ namespace MasterData.Infrastructure.BackgroundServices
             }
         }
 
-        private static TimeSpan CalculateDelayToNext()
+        private TimeSpan CalculateDelayToNext()
         {
-            var now = DateTime.Now;
+            var now = _fiscalClock.VenezuelaNow;
             var nowTime = TimeOnly.FromDateTime(now);
 
             // Buscar el próximo slot de hoy que aún no pasó

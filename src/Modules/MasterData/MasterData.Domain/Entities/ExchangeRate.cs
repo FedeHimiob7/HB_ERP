@@ -23,14 +23,13 @@ namespace MasterData.Domain.Entities
         public decimal Rate { get; private set; }
         public ExchangeRateSource Source { get; private set; }
 
-        public static ErrorOr<ExchangeRate> Create(decimal rate, ExchangeRateSource source)
+        public static ErrorOr<ExchangeRate> Create(decimal rate, ExchangeRateSource source, DateTime registerDate)
         {
             if (rate <= 0)
                 return ExchangeRateErrors.RateMustBePositive;
 
-            var exchangeRate = new ExchangeRate(ExchangeRateId.New(), DateTime.UtcNow, rate, source);
+            var exchangeRate = new ExchangeRate(ExchangeRateId.New(), registerDate, rate, source);
             exchangeRate.Raise(new ExchangeRateRegisteredDomainEvent(exchangeRate.Id, exchangeRate.RegisterDate, rate, source));
-
 
             return exchangeRate;
         }
