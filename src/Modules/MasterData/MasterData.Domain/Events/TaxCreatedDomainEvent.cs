@@ -7,6 +7,5 @@ namespace MasterData.Domain.Events
     public sealed record TaxCreatedDomainEvent(
         TaxId TaxId,
         string Name,
-        TaxType TaxType,
-        decimal Rate) : DomainEvent(TaxId.Value);
+        TaxType TaxType) : DomainEvent(TaxId.Value);
 }

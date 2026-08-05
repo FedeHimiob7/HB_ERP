@@ -14,20 +14,23 @@ namespace Inventory.Application.Products.Commands.UpdateProductPrices
     internal sealed class UpdateProductPricesCommandHandler : IRequestHandler<UpdateProductPricesCommand, ErrorOr<ProductResponse>>
     {
         private readonly IProductRepository _repository;
-        private readonly ITaxRepository _taxRepository;
+        private readonly IFiscalTaxRateRepository _fiscalTaxRateRepository;
         private readonly IInventoryUnitOfWork _unitOfWork;
         private readonly ICurrentUserProvider _currentUser;
+        private readonly IFiscalClock _fiscalClock;
 
         public UpdateProductPricesCommandHandler(
             IProductRepository repository,
-            ITaxRepository taxRepository,
+            IFiscalTaxRateRepository fiscalTaxRateRepository,
             IInventoryUnitOfWork unitOfWork,
-            ICurrentUserProvider currentUser)
+            ICurrentUserProvider currentUser,
+            IFiscalClock fiscalClock)
         {
             _repository = repository;
-            _taxRepository = taxRepository;
+            _fiscalTaxRateRepository = fiscalTaxRateRepository;
             _unitOfWork = unitOfWork;
             _currentUser = currentUser;
+            _fiscalClock = fiscalClock;
         }
 
         public async Task<ErrorOr<ProductResponse>> Handle(UpdateProductPricesCommand request, CancellationToken cancellationToken)
@@ -40,20 +43,41 @@ namespace Inventory.Application.Products.Commands.UpdateProductPrices
             var newPurchaseTaxIds = request.PurchaseTaxIds ?? new List<Guid>();
             var newSaleTaxIds = request.SaleTaxIds ?? new List<Guid>();
 
-            var allTaxes = await _taxRepository.GetAllAsync(cancellationToken);
+            // Junta los IDs de las 4 listas (compra/venta, viejos/nuevos) en una sola consulta batch,
+            // para no golpear la base de datos 4 veces por separado.
+            var allTaxIds = newPurchaseTaxIds
+                .Concat(newSaleTaxIds)
+                .Concat(product.PurchaseTaxIds.Select(t => t.Value))
+                .Concat(product.SaleTaxIds.Select(t => t.Value))
+                .Distinct()
+                .Select(TaxId.Create);
 
-            decimal SumRates(IEnumerable<Guid> taxIds)
+            // Diccionario TaxId -> tasa vigente hoy, para cada impuesto involucrado.
+            var effectiveRates = await _fiscalTaxRateRepository.GetEffectiveManyAsync(
+                allTaxIds, _fiscalClock.VenezuelaToday, cancellationToken);
+
+            // Suma la tasa vigente de una lista puntual de impuestos (busca cada uno en effectiveRates).
+            // Se llama 4 veces abajo, cada vez con una sola categoría (compra o venta) y un solo estado
+            // (viejo o nuevo) — nunca mezcla compra con venta.
+            decimal SumTaxRates(IEnumerable<Guid> taxIds)
             {
-                var ids = taxIds.ToList();
-                return ids.Count == 0
-                    ? 0
-                    : allTaxes.Where(t => ids.Contains(t.Id.Value)).Sum(t => t.Rate);
+                decimal total = 0m;
+
+                foreach (var taxId in taxIds)
+                {
+                    if (effectiveRates.TryGetValue(TaxId.Create(taxId), out var fiscalTaxRate))
+                    {
+                        total += fiscalTaxRate.Rate;
+                    }
+                }
+
+                return total;
             }
 
-            var oldPurchaseTaxRate = SumRates(product.PurchaseTaxIds.Select(t => t.Value));
-            var oldSaleTaxRate = SumRates(product.SaleTaxIds.Select(t => t.Value));
-            var newPurchaseTaxRate = SumRates(newPurchaseTaxIds);
-            var newSaleTaxRate = SumRates(newSaleTaxIds);
+            var oldPurchaseTaxRate = SumTaxRates(product.PurchaseTaxIds.Select(t => t.Value)); // impuestos de compra que tenía el producto antes del update
+            var oldSaleTaxRate = SumTaxRates(product.SaleTaxIds.Select(t => t.Value));          // impuestos de venta que tenía el producto antes del update
+            var newPurchaseTaxRate = SumTaxRates(newPurchaseTaxIds);                            // impuestos de compra que llegan en el request
+            var newSaleTaxRate = SumTaxRates(newSaleTaxIds);                                    // impuestos de venta que llegan en el request
 
             var result = product.UpdatePrices(
                 changedByUserId,

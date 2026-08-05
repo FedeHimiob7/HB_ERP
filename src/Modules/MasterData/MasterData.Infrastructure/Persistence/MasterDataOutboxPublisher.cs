@@ -88,7 +88,14 @@ namespace MasterData.Infrastructure.Persistence
                     _logger.LogError(ex, "❌ Error crítico en el Background Job de Outbox de MasterData.");
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Apagado normal del host — no es un error.
+                }
             }
         }
     }

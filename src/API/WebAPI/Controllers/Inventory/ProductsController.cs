@@ -38,9 +38,9 @@ namespace WebAPI.Controllers.Inventory
         }
 
         [HttpPost("generate-code")]
-        public async Task<IActionResult> GenerateCode([FromQuery] Guid productServiceLineId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GenerateCode([FromQuery] Guid productServiceLineId, [FromQuery] Guid branchId, CancellationToken cancellationToken)
         {
-            var result = await _sender.Send(new GenerateProductCodeCommand(productServiceLineId), cancellationToken);
+            var result = await _sender.Send(new GenerateProductCodeCommand(productServiceLineId, branchId), cancellationToken);
             return result.Match(
                 code => Ok(code),
                 errors => Problem(errors));

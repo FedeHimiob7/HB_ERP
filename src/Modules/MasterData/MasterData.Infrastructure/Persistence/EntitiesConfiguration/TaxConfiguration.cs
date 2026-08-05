@@ -23,10 +23,6 @@ namespace MasterData.Infrastructure.Persistence.EntitiesConfiguration
                 .IsRequired()
                 .HasConversion<int>();
 
-            builder.Property(t => t.Rate)
-                .IsRequired()
-                .HasPrecision(18, 4);
-
             builder.HasIndex(t => t.Name).IsUnique();
             builder.HasQueryFilter(t => t.IsActive);
         }

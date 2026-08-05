@@ -14,16 +14,24 @@ El plan original apuntaba a reconstruir los 12 bounded contexts del legacy compl
 
 ## Decisiones confirmadas
 
-### D-1 · Multi-tenancy: `Company` + `Branch`, con PSL anidado
+### D-1 · `Company` + `Branch` + `FiscalTerminal` — una instalación = una empresa/RIF, sin multi-tenancy
 
-El sistema debe servir tanto a LAExportGroup como, eventualmente, a otras empresas de rubros distintos (calzado, farmacia, ferretería, repuestos). Esto es un requisito de negocio confirmado, no solo técnico.
+**Revisado el 2026-08-04** — descarta el diseño multi-tenant original (ver nota histórica al final de esta sección).
 
-- `Company` (raíz de tenant: RIF, razón social, domicilio fiscal, tipo de contribuyente) se implementa **desde ahora**, aunque al principio solo exista un registro (LAExportGroup).
-- `ProductServiceLine` (PSL) deja de ser una dimensión de primer nivel y pasa a vivir **dentro de** una `Company` — sigue cumpliendo su rol actual (agrupación de líneas de negocio, filtro de visibilidad por usuario, parte de `Product.Code`), pero ahora anidado bajo el tenant.
-- `Branch` (Sucursal) también cuelga de `Company` — resuelve al mismo tiempo el pendiente ya documentado de `OfficeBranch` para completar el formato de `Product.Code`.
-- Se necesita un discriminador `CompanyId` + filtro global en los tres DbContexts existentes (`IdentityDbContext`, `MasterDataDbContext`, `InventoryDbContext`).
+Modelo de despliegue confirmado: el sistema **no es un SaaS centralizado**. Se instala una vez por cada empresa/cliente que lo requiera — base de datos propia, y potencialmente servidor propio, por instalación. Nunca conviven dos empresas (dos RIF) en la misma base de datos.
 
-**Por qué ahora:** hoy son tablas con datos de prueba. Meter el discriminador con datos productivos y facturas fiscales inmutables ya emitidas es mucho más caro y riesgoso.
+**Por qué esto descarta el multi-tenancy:** el SENIAT audita por RIF — al auditar a la empresa A no debe poder ver ni rozar información de la empresa B. Con una BD física y exclusiva por RIF ese riesgo desaparece por diseño, sin necesidad de discriminador ni filtro a nivel de aplicación. Meter un discriminador `CompanyId` + filtro global habría resuelto un problema (fuga de datos entre tenants compartiendo BD) que en este modelo de despliegue no puede ocurrir.
+
+**Caso "empresa matriz con sub-empresas de RIF distinto"** (ej. LA como grupo, con LA Zapatería / LA Service / LA Amazon cada una con su propio RIF): cada sub-empresa con RIF propio es una **instalación separada, con su propia base de datos**. La noción de "grupo" que las une (LA) no vive en este sistema homologado — es un concepto del sistema administrativo legacy, y es candidato natural para la sincronización futura diferida (ver D-5), no para una jerarquía dentro de este sistema.
+
+**Jerarquía confirmada dentro de una misma instalación:**
+- `Company` — **una sola fila** por instalación: RIF, razón social, domicilio fiscal, tipo de contribuyente de la empresa dueña de esa base de datos. Es el emisor que aparece en cada documento fiscal. No es raíz de tenant, es perfil fiscal de la instalación.
+- `Branch` (Sucursal) — N por `Company`. Representa un local físico de esa misma empresa/RIF (ej. LA Zapatería con 4 locales, todos bajo el mismo RIF — el SENIAT audita la empresa, no la sucursal individual, así que las facturas de las 4 sucursales conviven sin problema). Resuelve de paso el pendiente ya documentado de `OfficeBranch` para completar el formato de `Product.Code`.
+- `FiscalTerminal` (antes anotado como `WorkStation`) — N por `Branch`. Es el punto de emisión (caja física, máquina fiscal, canal digital) dentro de una sucursal. Necesita ser una entidad propia porque cada punto de emisión requiere su **propia secuencia correlativa e ininterrumpida de número de control** (mismo patrón UPDLOCK que ya usa `ProductCodeCounter`) — si dos cajas de la misma sucursal compartieran una sola secuencia, emitir en simultáneo generaría condición de carrera sobre quién obtiene el siguiente correlativo. También es el nivel donde se configura **cuál de los tres medios de emisión** (máquina fiscal / forma libre / digital) usa cada punto, ya que pueden variar dentro de la misma sucursal.
+- **`ProductServiceLine` (PSL) no se toca** — sigue siendo exactamente lo que ya es, una dimensión de catálogo (línea de negocio, filtro de visibilidad, parte de `Product.Code`), sin datos fiscales ni jerarquía bajo `Company`. Se descartó fusionarlo con `Branch`: la relación entre PSL y sucursal es muchos-a-muchos (un PSL se vende en varias sucursales, una sucursal vende varios PSL), no son la misma dimensión.
+- **No se necesita discriminador `CompanyId` ni filtro global** en ningún DbContext — queda fuera del alcance de F0.
+
+**Nota histórica:** el diseño original de este punto (multi-tenant con `CompanyId` + filtro global en los tres DbContexts, PSL anidado bajo `Company`) se descartó en la sesión del 2026-08-04 al confirmar que el modelo de negocio es instalación dedicada por empresa, no SaaS compartido.
 
 ### D-2 · `ThirdParty` unificado (reemplaza la separación Customer/Supplier)
 
@@ -70,7 +78,7 @@ No se implementa todavía (`ConectorLegacy`/sync no es prioridad de corto plazo)
 
 | Módulo | Cobertura actual | Qué ya sirve | Qué falta |
 |---|---|---|---|
-| **Security/IAM** | 🟨 Parcial | `User`, `Role`, `SystemAction` con JWT y permisos granulares (mejor que el Form/Action del legacy) | `Company`, `Branch`, `WorkStation`, `EventLog` (bitácora append-only), `HomologatedVersion` |
+| **Security/IAM** | 🟨 Parcial | `User`, `Role`, `SystemAction` con JWT y permisos granulares (mejor que el Form/Action del legacy) | `Company`, `Branch`, `FiscalTerminal`, `EventLog` (bitácora append-only), `HomologatedVersion` |
 | **ThirdParty** | 🟥 Casi nada | `Country`/`State`/`City` como soporte de dirección | `ThirdParty`, `Customer`, `Supplier`, `IdentificationType`, `TaxpayerType`, `Address`, `Contact`, `PaymentTerm` |
 | **Catalog & Inventory** | 🟨 Parcial | Catálogo completo (`ProductType/Category/SubCategory/Brand/Warehouse/StorageType`) + `Product` + `ProductCodeCounter` + `ProductPriceHistory` | `Stock`/`InventoryMovement`, variantes, lotes, seriales, código de alícuota en `Product` |
 | **Billing (Facturación)** | 🟥 0% | Nada | **Todo**: `FiscalDocument` (aggregate raíz), líneas, impuestos por documento, series/número de control, notas de crédito/débito, pagos |
@@ -101,10 +109,10 @@ No se implementa todavía (`ConectorLegacy`/sync no es prioridad de corto plazo)
 ## Roadmap por fases
 
 ### F0 · Cimientos regulados (bloqueante)
-- `Company` + `Branch` + `WorkStation`, discriminador de tenant en los tres DbContexts — **pendiente, la tarea más grande de F0**
+- `Company` (fila única) + `Branch` + `FiscalTerminal` — **pendiente.** Sin discriminador de tenant ni filtro global (ver D-1 revisado: una instalación = una empresa/RIF, no multi-tenant); la tarea se redujo a modelar las tres entidades y su jerarquía, sin tocar los DbContexts existentes.
 - `ProductCodeCounter` con secuencia de sucursal (ya estaba planificado) — pendiente
-- Parámetro fiscal genérico versionado por fecha — **pendiente, diseñar antes que `Tax`→`TaxRate`.** Generaliza el patrón inmutable ya usado por `ExchangeRate` (un registro nuevo por cambio, nunca se edita el anterior) para reutilizarlo en `TaxRate`, Unidad Tributaria, y los tramos de IGTF — en vez de reinventar el patrón cuatro veces
-- `Tax` → `Tax` + `TaxRate` con vigencia — pendiente, depende del punto anterior
+- Parámetro fiscal genérico versionado por fecha — **✅ hecho.** `IEffectiveDated` (`HB_ERP.SharedKernel/Domain/Primitives`) + extension method `GetEffectiveAsOfAsync<T>` (`HB_ERP.SharedKernel/Infrastructure/Extensions/EffectiveDatedQueryExtensions.cs`), generalizando el patrón inmutable de `ExchangeRate`.
+- `Tax` → `Tax` + `FiscalTaxRate` con vigencia — **✅ hecho.** Diseño final (revisado tras feedback: no reintroducir una segunda entidad "suelta" tipo `TaxRate`): `Tax` = identidad/catálogo mutable (`Name`, `TaxType`, `IsActive`, sin `Rate`) — sigue siendo lo que `Product.PurchaseTaxIds`/`SaleTaxIds` referencia de forma estable. `FiscalTaxRate` = valor versionado (`TaxId` FK, `Rate`, `EffectiveFrom`), inmutable, **sin `IsActive`** — nunca se oculta una fila puntual, solo se acumulan versiones; convención de nombre `Fiscal*` para la mitad versionada de cualquier futuro split identidad/valor (ej. Unidad Tributaria, tramos IGTF). Un Command/Query por intención de negocio (`CreateTaxCommand` crea ambas entidades atómicamente, `RegisterTaxRateCommand` solo agrega versión, `UpdateTaxDetailsCommand` solo toca identidad) — nadie en Application elige manualmente qué tabla tocar, mismo mecanismo que `UpdateProductPricesCommand`/`ProductPriceHistory`. `Inventory.UpdateProductPricesCommandHandler` ya migrado a `IFiscalTaxRateRepository.GetEffectiveManyAsync`. Migración `UnifyTaxWithFiscalTaxRate` aplicada (drop `Tax.Rate`, tabla `FiscalTaxRates` con índice compuesto `(TaxId, EffectiveFrom)`). Tests de dominio actualizados.
 - `EventLog` append-only (Security/IAM) — pendiente
 - Primitivas fiscales en SharedKernel: cadena de hash (pendiente), fecha fiscal en hora Venezuela — **✅ hecho** (`IFiscalClock`/`FiscalClock`)
 - Estructura de pruebas unitarias, cubriendo motor de cálculo existente — **✅ hecho para Domain** (`Tax`, `ExchangeRate`, `Product`); pendiente `Application.Tests`/`Infrastructure.Tests`

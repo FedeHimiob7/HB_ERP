@@ -32,12 +32,16 @@ namespace MasterData.Infrastructure.Persistence
         }
 
         public DbSet<OutboxMessage> OutboxMessages { get; set; }
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<Branch> Branches { get; set; }
+        public DbSet<FiscalTerminal> FiscalTerminals { get; set; }
         public DbSet<Currency> Currencies { get; set; }
         public DbSet<ProductServiceLine> ProductServiceLines { get; set; }
         public DbSet<Country> Countries { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<Domain.Entities.Unit> Units { get; set; }
         public DbSet<Tax> Taxes { get; set; }
+        public DbSet<FiscalTaxRate> FiscalTaxRates { get; set; }
         public DbSet<City> Cities { get; set; }
         public DbSet<ExchangeRate> ExchangeRates { get; set; }
 

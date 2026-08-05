@@ -46,12 +46,16 @@ namespace MasterData.Infrastructure
             services.AddScoped<IMasterDataUnitOfWork, MasterDataEfUnitOfWork>();     
 
 
+            services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<IBranchRepository, BranchRepository>();
+            services.AddScoped<IFiscalTerminalRepository, FiscalTerminalRepository>();
             services.AddScoped<ICurrencyRepository, CurrencyRepository>();
             services.AddScoped<IProductServiceLineRepository, ProductServiceLineRepository>();
             services.AddScoped<ICountryRepository, CountryRepository>();
             services.AddScoped<IStateRepository, StateRepository>();
             services.AddScoped<IUnitRepository, UnitRepository>();
             services.AddScoped<ITaxRepository, TaxRepository>();
+            services.AddScoped<IFiscalTaxRateRepository, FiscalTaxRateRepository>();
             services.AddScoped<ICityRepository, CityRepository>();
             services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
             services.AddScoped<IBCVRateScrapingService, BCVRateScrapingService>();

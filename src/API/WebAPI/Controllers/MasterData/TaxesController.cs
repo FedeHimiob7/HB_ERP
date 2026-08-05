@@ -1,8 +1,10 @@
 using MasterData.Application.Taxes.Commands.CreateTax;
 using MasterData.Application.Taxes.Commands.DeactivateTax;
-using MasterData.Application.Taxes.Commands.UpdateTax;
+using MasterData.Application.Taxes.Commands.RegisterTaxRate;
+using MasterData.Application.Taxes.Commands.UpdateTaxDetails;
 using MasterData.Application.Taxes.Queries.GetAll;
 using MasterData.Application.Taxes.Queries.GetById;
+using MasterData.Application.Taxes.Queries.GetEffectiveRate;
 using MasterData.Application.Taxes.Queries.GetPaged;
 using MasterData.Domain.SearchParametersModel;
 using Microsoft.AspNetCore.Mvc;
@@ -30,11 +32,28 @@ namespace WebAPI.Controllers.MasterData
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTaxRequest request)
         {
-            var command = new UpdateTaxCommand(id, request.Name, request.TaxType, request.Rate);
+            var command = new UpdateTaxDetailsCommand(id, request.Name, request.TaxType);
             var result = await _sender.Send(command);
             return result.Match(
                 taxResponse => Ok(taxResponse),
                 errors => Problem(errors));
+        }
+
+        [HttpPost("{id:guid}/rates")]
+        public async Task<IActionResult> RegisterRate(Guid id, [FromBody] RegisterTaxRateRequest request)
+        {
+            var command = new RegisterTaxRateCommand(id, request.Rate);
+            var result = await _sender.Send(command);
+            return result.Match(
+                rateId => Ok(rateId),
+                errors => Problem(errors));
+        }
+
+        [HttpGet("{id:guid}/effective")]
+        public async Task<IActionResult> GetEffective(Guid id, [FromQuery] DateOnly date, CancellationToken cancellationToken)
+        {
+            var result = await _sender.Send(new GetEffectiveTaxRateQuery(id, date), cancellationToken);
+            return result.Match(rate => Ok(rate), errors => Problem(errors));
         }
 
         [HttpDelete("{id:guid}")]

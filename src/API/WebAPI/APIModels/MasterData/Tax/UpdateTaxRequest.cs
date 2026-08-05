@@ -2,5 +2,5 @@ using MasterData.Domain.Enums;
 
 namespace WebAPI.APIModels.MasterData.Tax
 {
-    public record UpdateTaxRequest(string Name, TaxType TaxType, decimal Rate);
+    public record UpdateTaxRequest(string Name, TaxType TaxType);
 }

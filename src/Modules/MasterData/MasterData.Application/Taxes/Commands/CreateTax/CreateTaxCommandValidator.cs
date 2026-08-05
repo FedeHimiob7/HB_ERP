@@ -8,7 +8,7 @@ namespace MasterData.Application.Taxes.Commands.CreateTax
         {
             RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
             RuleFor(x => x.TaxType).IsInEnum();
-            RuleFor(x => x.Rate).GreaterThan(0).LessThanOrEqualTo(1);
+            RuleFor(x => x.Rate).GreaterThanOrEqualTo(0).LessThanOrEqualTo(1);
         }
     }
 }

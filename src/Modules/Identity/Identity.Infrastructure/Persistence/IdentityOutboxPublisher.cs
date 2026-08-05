@@ -71,7 +71,14 @@ namespace Identity.Infrastructure.Persistence
                 }
 
                 // Escaneo optimizado cada 1 segundo
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Apagado normal del host — no es un error.
+                }
             }
         }
     }

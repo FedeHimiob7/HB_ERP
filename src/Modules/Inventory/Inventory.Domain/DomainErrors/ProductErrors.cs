@@ -16,6 +16,10 @@ namespace Inventory.Domain.DomainErrors
             code: "Product.InvalidProductServiceLine",
             description: "La línea de producto/servicio es obligatoria.");
 
+        public static Error InvalidBranch => Error.Validation(
+            code: "Product.InvalidBranch",
+            description: "La sucursal indicada no es válida.");
+
         public static Error InvalidCostCurrency => Error.Validation(
             code: "Product.InvalidCostCurrency",
             description: "La moneda del costo no es válida.");

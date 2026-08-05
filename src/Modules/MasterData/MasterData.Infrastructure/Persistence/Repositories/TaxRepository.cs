@@ -17,7 +17,7 @@ namespace MasterData.Infrastructure.Persistence.Repositories
 
         public async Task<List<Tax>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _dbContext.Taxes.AsNoTracking()
-                .OrderBy(t => t.TaxType).ThenBy(t => t.Rate)
+                .OrderBy(t => t.TaxType).ThenBy(t => t.Name)
                 .ToListAsync(cancellationToken);
 
         public async Task AddAsync(Tax tax, CancellationToken cancellationToken = default)
@@ -48,7 +48,7 @@ namespace MasterData.Infrastructure.Persistence.Repositories
 
             var taxes = await query
                 .OrderBy(t => t.TaxType)
-                .ThenBy(t => t.Rate)
+                .ThenBy(t => t.Name)
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .ToListAsync(cancellationToken);

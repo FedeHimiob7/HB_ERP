@@ -11,37 +11,32 @@ namespace MasterData.Domain.Entities
     {
         private Tax() { }
 
-        private Tax(TaxId id, string name, TaxType taxType, decimal rate, bool isActive) : base(id)
+        private Tax(TaxId id, string name, TaxType taxType, bool isActive) : base(id)
         {
             Name = name;
             TaxType = taxType;
-            Rate = rate;
             IsActive = isActive;
         }
 
         public string Name { get; private set; } = string.Empty;
         public TaxType TaxType { get; private set; }
-        public decimal Rate { get; private set; }
         public bool IsActive { get; private set; }
 
-        public static ErrorOr<Tax> Create(string name, TaxType taxType, decimal rate)
+        public static ErrorOr<Tax> Create(string name, TaxType taxType)
         {
             if (string.IsNullOrWhiteSpace(name)) return TaxErrors.NameIsRequired;
-            if (rate <= 0) return TaxErrors.RateMustBePositive;
 
-            var tax = new Tax(TaxId.New(), name.Trim(), taxType, rate, isActive: true);
-            tax.Raise(new TaxCreatedDomainEvent(tax.Id, tax.Name, tax.TaxType, tax.Rate));
+            var tax = new Tax(TaxId.New(), name.Trim(), taxType, isActive: true);
+            tax.Raise(new TaxCreatedDomainEvent(tax.Id, tax.Name, tax.TaxType));
             return tax;
         }
 
-        public ErrorOr<Success> UpdateDetails(string name, TaxType taxType, decimal rate)
+        public ErrorOr<Success> UpdateDetails(string name, TaxType taxType)
         {
             if (string.IsNullOrWhiteSpace(name)) return TaxErrors.NameIsRequired;
-            if (rate <= 0) return TaxErrors.RateMustBePositive;
 
             Name = name.Trim();
             TaxType = taxType;
-            Rate = rate;
 
             return Result.Success;
         }

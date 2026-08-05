@@ -33,10 +33,15 @@ namespace MasterData.Infrastructure.BackgroundServices
                 _logger.LogInformation("BCVRateSyncWorker: próxima sincronización a las {NextRun:HH:mm} ({Delay:hh\\:mm} horas).",
                     nextRun, delay);
 
-                await Task.Delay(delay, stoppingToken);
-
-                if (stoppingToken.IsCancellationRequested)
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Apagado normal del host — no es un error.
                     break;
+                }
 
                 await SyncAsync(stoppingToken);
             }

@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Inventory.Application.Products.Commands.GenerateProductCode
 {
-    public record GenerateProductCodeCommand(Guid ProductServiceLineId) : IRequest<ErrorOr<GenerateProductCodeResult>>;
+    public record GenerateProductCodeCommand(Guid ProductServiceLineId, Guid BranchId) : IRequest<ErrorOr<GenerateProductCodeResult>>;
 }

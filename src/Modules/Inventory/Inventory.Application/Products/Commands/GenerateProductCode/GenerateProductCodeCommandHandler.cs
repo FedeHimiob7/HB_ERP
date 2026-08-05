@@ -14,15 +14,18 @@ namespace Inventory.Application.Products.Commands.GenerateProductCode
     {
         private readonly IProductCodeCounterRepository _counterRepository;
         private readonly IProductServiceLineRepository _pslRepository;
+        private readonly IBranchRepository _branchRepository;
         private readonly ICurrentUserProvider _currentUser;
 
         public GenerateProductCodeCommandHandler(
             IProductCodeCounterRepository counterRepository,
             IProductServiceLineRepository pslRepository,
+            IBranchRepository branchRepository,
             ICurrentUserProvider currentUser)
         {
             _counterRepository = counterRepository;
             _pslRepository = pslRepository;
+            _branchRepository = branchRepository;
             _currentUser = currentUser;
         }
 
@@ -36,12 +39,16 @@ namespace Inventory.Application.Products.Commands.GenerateProductCode
             if (await _pslRepository.GetByIdAsync(pslId, cancellationToken) is null)
                 return ProductErrors.InvalidProductServiceLine;
 
+            var branch = await _branchRepository.GetByIdAsync(BranchId.Create(request.BranchId), cancellationToken);
+            if (branch is null)
+                return ProductErrors.InvalidBranch;
+
             var today = DateOnly.FromDateTime(DateTime.Now);
 
             var (_, _, code) = await _counterRepository.ReserveNextAsync(
                 pslId,
                 today,
-                (pslSeq, counter) => $"{today.Year}{today.Month}{today.Day}-{pslSeq}-{counter}",
+                (pslSeq, counter) => $"{today.Year}{today.Month}{today.Day}-{pslSeq}-{branch.SequenceNumber}-{counter}",
                 cancellationToken);
 
             return new GenerateProductCodeResult(code);
