@@ -1,6 +1,9 @@
-﻿using Identity.Application.Common.Interfaces;
+﻿using HB_ERP.SharedKernel.Domain.Primitives;
+using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
+using Identity.Domain.Entities;
+using Identity.Domain.Enums;
 using Identity.Domain.Interface;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
@@ -16,6 +19,8 @@ namespace Identity.Application.Users.Commands.RegisterUser
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRoleRepository _roleRepository;
         private readonly IPslExistenceChecker _pslChecker;
+        private readonly IEventLogRepository _eventLogRepository;
+        private readonly IFiscalClock _fiscalClock;
 
         public RegisterUserCommandHandler(
             IUserRepository userRepository,
@@ -23,7 +28,9 @@ namespace Identity.Application.Users.Commands.RegisterUser
             IUserEmailUniquenessChecker userEmailUniquenessChecker,
             IPasswordHasher passwordHasher,
             IRoleRepository roleRepository,
-            IPslExistenceChecker pslChecker)
+            IPslExistenceChecker pslChecker,
+            IEventLogRepository eventLogRepository,
+            IFiscalClock fiscalClock)
         {
             _userRepository = userRepository
                 ?? throw new ArgumentNullException(nameof(userRepository));
@@ -42,6 +49,12 @@ namespace Identity.Application.Users.Commands.RegisterUser
 
             _pslChecker = pslChecker
                 ?? throw new ArgumentNullException(nameof(pslChecker));
+
+            _eventLogRepository = eventLogRepository
+                ?? throw new ArgumentNullException(nameof(eventLogRepository));
+
+            _fiscalClock = fiscalClock
+                ?? throw new ArgumentNullException(nameof(fiscalClock));
         }
 
         public async Task<ErrorOr<Guid>> Handle(
@@ -82,6 +95,14 @@ namespace Identity.Application.Users.Commands.RegisterUser
             }
 
             await _userRepository.AddAsync(user);
+
+            var eventLog = EventLog.Create(
+                EventLogType.UserRegistered,
+                _fiscalClock.VenezuelaNow,
+                $"Usuario autorregistrado: {user.Email.Value}",
+                entityType: nameof(User),
+                entityId: user.Id.Value);
+            await _eventLogRepository.AddAsync(eventLog, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return user.Id.Value;

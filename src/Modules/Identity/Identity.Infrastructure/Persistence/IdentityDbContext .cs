@@ -1,6 +1,8 @@
-﻿using HB_ERP.SharedKernel.Domain.Primitives;
+﻿using HB_ERP.SharedKernel.Domain;
+using HB_ERP.SharedKernel.Domain.Primitives;
 using HB_ERP.SharedKernel.Infrastructure;
 using Identity.Domain;
+using Identity.Domain.Entities;
 using Identity.Domain.VO;
 using Identity.Infrastructure.Persistence.Entities;
 using MassTransit;
@@ -22,7 +24,7 @@ namespace Identity.Infrastructure.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
-            
+            modelBuilder.Ignore<DomainEvent>();
 
             modelBuilder.HasDefaultSchema("Identity");
             modelBuilder.HasAnnotation("Relational:MigrationHistoryTable", "__EFMigrationsHistory");         
@@ -44,5 +46,6 @@ namespace Identity.Infrastructure.Persistence
         public DbSet<RoleEntity> Roles => Set<RoleEntity>();
         public DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
         public DbSet<UserPslEntity> UserPsls => Set<UserPslEntity>();
+        public DbSet<EventLog> EventLogs => Set<EventLog>();
     }
 }

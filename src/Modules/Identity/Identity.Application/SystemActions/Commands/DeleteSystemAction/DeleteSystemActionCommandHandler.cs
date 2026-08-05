@@ -1,5 +1,9 @@
+using HB_ERP.SharedKernel.Domain.Primitives;
+using Identity.Application.Common.Extensions;
 using Identity.Application.Common.Interfaces;
 using Identity.Domain.DomainErrors;
+using Identity.Domain.Entities;
+using Identity.Domain.Enums;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 
@@ -11,15 +15,24 @@ namespace Identity.Application.SystemActions.Commands.DeleteSystemAction
         private readonly ISystemActionRepository _systemActionRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IIdentityUnitOfWork _unitOfWork;
+        private readonly IEventLogRepository _eventLogRepository;
+        private readonly IFiscalClock _fiscalClock;
+        private readonly ICurrentUserProvider _currentUser;
 
         public DeleteSystemActionCommandHandler(
             ISystemActionRepository systemActionRepository,
             IRoleRepository roleRepository,
-            IIdentityUnitOfWork unitOfWork)
+            IIdentityUnitOfWork unitOfWork,
+            IEventLogRepository eventLogRepository,
+            IFiscalClock fiscalClock,
+            ICurrentUserProvider currentUser)
         {
             _systemActionRepository = systemActionRepository;
             _roleRepository = roleRepository;
             _unitOfWork = unitOfWork;
+            _eventLogRepository = eventLogRepository;
+            _fiscalClock = fiscalClock;
+            _currentUser = currentUser;
         }
 
         public async Task<ErrorOr<Deleted>> Handle(
@@ -41,6 +54,15 @@ namespace Identity.Application.SystemActions.Commands.DeleteSystemAction
                 role.RevokeAction(new ActionsId(command.Id));
                 await _roleRepository.UpdateAsync(role, cancellationToken);
             }
+
+            var eventLog = EventLog.Create(
+                EventLogType.SystemActionDeactivated,
+                _fiscalClock.VenezuelaNow,
+                $"Acción de sistema '{action.Name.Value}' desactivada; removida de {affectedRoles.Count} rol(es)",
+                _currentUser.GetUserIdOrNull(),
+                entityType: nameof(SystemAction),
+                entityId: action.Id.Value);
+            await _eventLogRepository.AddAsync(eventLog, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

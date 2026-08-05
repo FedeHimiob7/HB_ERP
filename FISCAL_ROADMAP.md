@@ -48,14 +48,15 @@ Hallazgo: hoy `CalculatePricesQueryHandler` calcula el IGTF de forma compuesta s
 
 **Acción (no urgente, anotada para cuando se construya el núcleo de facturación):** el IGTF fiscal se calcula en el momento del pago (`Payment`/`PaymentMethod`), no en el precio del producto. El cálculo actual en `CalculatePricesQueryHandler` se conserva como "precio referencial con IGTF" de uso comercial, pero se documenta que no es el cálculo fiscal definitivo.
 
-### D-4 · `Tax` + `TaxRate` (vigencia temporal)
+### D-4 · `Tax` + `FiscalTaxRate` (vigencia temporal) — ✅ implementado
 
-Se separa la identidad del valor, siguiendo el mismo patrón que ya usa `ExchangeRate` (un registro nuevo por cada cambio, nunca se sobreescribe uno existente):
+Se separa la identidad del valor, siguiendo el mismo patrón que ya usaba `ExchangeRate` (un registro nuevo por cada cambio, nunca se sobreescribe uno existente), ahora generalizado en `IEffectiveDated` (ver `CLAUDE.md`, sección SharedKernel).
 
-- `Tax`: identidad estable — `Name`, `TaxType` (IVA/IGTF/ISLR), código de alícuota. Casi nunca cambia.
-- `TaxRate` (hijo de `Tax`): `Rate`, `EffectiveFrom`, `EffectiveTo`. Cada cambio de alícuota crea un registro nuevo con su propia vigencia; el anterior se cierra, nunca se edita.
-- El motor fiscal resuelve la tasa vigente según la **fecha del documento**, nunca "el valor actual" — así se preserva el historial fiscal para auditorías, reimpresión y reportes.
-- Impacto sobre lo construido: bajo. `Product` sigue guardando `TaxId`; hay que ajustar los handlers que hoy suman `Rate` directamente (`UpdateProductPricesCommandHandler`, `CalculatePrices`) para que resuelvan por vigencia.
+- `Tax`: identidad estable — `Name`, `TaxType` (IVA/IGTF/ISLR), `IsActive`. Casi nunca cambia. Sigue siendo lo que `Product.PurchaseTaxIds`/`SaleTaxIds` referencia de forma estable.
+- `FiscalTaxRate` (hijo de `Tax`, implementa `IEffectiveDated`): `TaxId`, `Rate`, `EffectiveFrom`. **Sin `EffectiveTo`** (se descartó en la implementación final — la vigencia se resuelve por orden descendente de `EffectiveFrom`, no por rango cerrado) y **sin `IsActive`** (nunca se oculta una fila puntual, solo se acumulan versiones). Cada cambio de alícuota crea un registro nuevo.
+- El motor fiscal resuelve la tasa vigente según la **fecha del documento** vía `GetEffectiveAsOfAsync`, nunca "el valor actual" — así se preserva el historial fiscal para auditorías, reimpresión y reportes.
+- Un Command/Query por intención de negocio, nadie en Application elige manualmente qué tabla tocar (mismo mecanismo que `UpdateProductPricesCommand`/`ProductPriceHistory`): `CreateTaxCommand` crea `Tax` + primera `FiscalTaxRate` atómicamente, `RegisterTaxRateCommand` solo agrega versión, `UpdateTaxDetailsCommand` solo toca identidad, `GetEffectiveTaxRateQuery` resuelve por fecha.
+- Impacto sobre lo construido: bajo, ya migrado. `Product` sigue guardando `TaxId`; `UpdateProductPricesCommandHandler` ya usa `IFiscalTaxRateRepository.GetEffectiveManyAsync` en vez de sumar `Rate` directamente. Migración `UnifyTaxWithFiscalTaxRate` aplicada (drop `Tax.Rate`, tabla `FiscalTaxRates` con índice compuesto `(TaxId, EffectiveFrom)`).
 
 ### D-5 · Sincronización con el legacy: diferida, pero con un requisito ya anotado
 
@@ -78,12 +79,12 @@ No se implementa todavía (`ConectorLegacy`/sync no es prioridad de corto plazo)
 
 | Módulo | Cobertura actual | Qué ya sirve | Qué falta |
 |---|---|---|---|
-| **Security/IAM** | 🟨 Parcial | `User`, `Role`, `SystemAction` con JWT y permisos granulares (mejor que el Form/Action del legacy) | `Company`, `Branch`, `FiscalTerminal`, `EventLog` (bitácora append-only), `HomologatedVersion` |
+| **Security/IAM** | 🟨 Parcial | `User`, `Role`, `SystemAction` con JWT y permisos granulares (mejor que el Form/Action del legacy); `Company`, `Branch`, `FiscalTerminal` (perfil fiscal + jerarquía de emisión, ver D-1) | `EventLog` (bitácora append-only), `HomologatedVersion` |
 | **ThirdParty** | 🟥 Casi nada | `Country`/`State`/`City` como soporte de dirección | `ThirdParty`, `Customer`, `Supplier`, `IdentificationType`, `TaxpayerType`, `Address`, `Contact`, `PaymentTerm` |
-| **Catalog & Inventory** | 🟨 Parcial | Catálogo completo (`ProductType/Category/SubCategory/Brand/Warehouse/StorageType`) + `Product` + `ProductCodeCounter` + `ProductPriceHistory` | `Stock`/`InventoryMovement`, variantes, lotes, seriales, código de alícuota en `Product` |
-| **Billing (Facturación)** | 🟥 0% | Nada | **Todo**: `FiscalDocument` (aggregate raíz), líneas, impuestos por documento, series/número de control, notas de crédito/débito, pagos |
+| **Catalog & Inventory** | 🟨 Parcial | Catálogo completo (`ProductType/Category/SubCategory/Brand/Warehouse/StorageType`) + `Product` + `ProductCodeCounter` + `ProductPriceHistory` | `Stock`/`InventoryMovement`, variantes, lotes, seriales, código de alícuota en `Product`, segmento de sucursal en `Product.Code` (insumo `Branch.SequenceNumber` ya existe) |
+| **Billing (Facturación)** | 🟥 0% | Nada | **Todo**: `FiscalDocument` (aggregate raíz), líneas, impuestos por documento, series/número de control (reusa `FiscalTerminal` + patrón UPDLOCK), notas de crédito/débito, pagos |
 | **Purchasing** | 🟥 0% | Nada | Órdenes de compra, recepción, factura de compra, retenciones emitidas |
-| **Fiscal Compliance** | 🟥 Muy parcial | `Tax` (a evolucionar a Tax+TaxRate), Outbox+MassTransit (base para remisión), patrón de worker externo (BCV, reusable para SENIAT) | Libros de IVA, transmisión SENIAT, registro de eventos fiscal, clave de consulta |
+| **Fiscal Compliance** | 🟨 Parcial | `Tax` + `FiscalTaxRate` (identidad/valor versionado por vigencia, ver D-4 — ✅ hecho), Outbox+MassTransit (base para remisión), patrón de worker externo (BCV, reusable para SENIAT) | Libros de IVA, transmisión SENIAT, registro de eventos fiscal, clave de consulta |
 | **Treasury** | 🟨 Parcial | `Currency`, `ExchangeRate` (con scraping BCV automático — activo superior a lo que pide la norma) | Caja, arqueo, cuentas por cobrar/pagar, bancos |
 | **Reports** | 🟨 Parcial | Patrón CQRS de lectura + paginación ya establecido | Vistas de libros fiscales, dashboards |
 | **Integration** | 🟨 Parcial | MassTransit+RabbitMQ+Outbox, Swagger, precedente de conector externo (BCV) | Conector SENIAT, driver de máquina fiscal, conector de imprenta digital |
@@ -109,10 +110,10 @@ No se implementa todavía (`ConectorLegacy`/sync no es prioridad de corto plazo)
 ## Roadmap por fases
 
 ### F0 · Cimientos regulados (bloqueante)
-- `Company` (fila única) + `Branch` + `FiscalTerminal` — **pendiente.** Sin discriminador de tenant ni filtro global (ver D-1 revisado: una instalación = una empresa/RIF, no multi-tenant); la tarea se redujo a modelar las tres entidades y su jerarquía, sin tocar los DbContexts existentes.
-- `ProductCodeCounter` con secuencia de sucursal (ya estaba planificado) — pendiente
+- `Company` (fila única) + `Branch` + `FiscalTerminal` — **✅ hecho (2026-08-05).** Domain + Application (CRUD completo, `Branch`/`FiscalTerminal` con paginación) + Infrastructure (migración `AddCompanyBranchFiscalTerminal`) + Controllers (`CompaniesController` vía `GET/PUT /api/companies/current`, `BranchesController`, `FiscalTerminalsController`) + tests de dominio. Sin discriminador de tenant ni filtro global (ver D-1: una instalación = una empresa/RIF, no multi-tenant). `Company.Rif` valida formato `^[VEJPG]-\d{8,9}-\d$`; `Branch.SequenceNumber` deja el terreno listo para el segmento de sucursal en `Product.Code` (ver punto siguiente); `FiscalTerminal.EmissionMethod` ya modela los tres medios de emisión. Ver tabla de entidades de MasterData en `CLAUDE.md`.
+- `ProductCodeCounter` con secuencia de sucursal (ya estaba planificado) — pendiente. `Branch.SequenceNumber` ya existe como insumo; falta que `GenerateProductCodeCommand` lo incorpore al formato del código.
 - Parámetro fiscal genérico versionado por fecha — **✅ hecho.** `IEffectiveDated` (`HB_ERP.SharedKernel/Domain/Primitives`) + extension method `GetEffectiveAsOfAsync<T>` (`HB_ERP.SharedKernel/Infrastructure/Extensions/EffectiveDatedQueryExtensions.cs`), generalizando el patrón inmutable de `ExchangeRate`.
-- `Tax` → `Tax` + `FiscalTaxRate` con vigencia — **✅ hecho.** Diseño final (revisado tras feedback: no reintroducir una segunda entidad "suelta" tipo `TaxRate`): `Tax` = identidad/catálogo mutable (`Name`, `TaxType`, `IsActive`, sin `Rate`) — sigue siendo lo que `Product.PurchaseTaxIds`/`SaleTaxIds` referencia de forma estable. `FiscalTaxRate` = valor versionado (`TaxId` FK, `Rate`, `EffectiveFrom`), inmutable, **sin `IsActive`** — nunca se oculta una fila puntual, solo se acumulan versiones; convención de nombre `Fiscal*` para la mitad versionada de cualquier futuro split identidad/valor (ej. Unidad Tributaria, tramos IGTF). Un Command/Query por intención de negocio (`CreateTaxCommand` crea ambas entidades atómicamente, `RegisterTaxRateCommand` solo agrega versión, `UpdateTaxDetailsCommand` solo toca identidad) — nadie en Application elige manualmente qué tabla tocar, mismo mecanismo que `UpdateProductPricesCommand`/`ProductPriceHistory`. `Inventory.UpdateProductPricesCommandHandler` ya migrado a `IFiscalTaxRateRepository.GetEffectiveManyAsync`. Migración `UnifyTaxWithFiscalTaxRate` aplicada (drop `Tax.Rate`, tabla `FiscalTaxRates` con índice compuesto `(TaxId, EffectiveFrom)`). Tests de dominio actualizados.
+- `Tax` → `Tax` + `FiscalTaxRate` con vigencia — **✅ hecho.** Ver detalle en D-4 arriba. Tests de dominio actualizados.
 - `EventLog` append-only (Security/IAM) — pendiente
 - Primitivas fiscales en SharedKernel: cadena de hash (pendiente), fecha fiscal en hora Venezuela — **✅ hecho** (`IFiscalClock`/`FiscalClock`)
 - Estructura de pruebas unitarias, cubriendo motor de cálculo existente — **✅ hecho para Domain** (`Tax`, `ExchangeRate`, `Product`); pendiente `Application.Tests`/`Infrastructure.Tests`

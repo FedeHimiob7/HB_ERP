@@ -43,6 +43,7 @@ namespace Identity.Infrastructure
             services.AddScoped<IUserEmailUniquenessChecker, UserEmailUniquenessChecker>();
             services.AddScoped<IRoleNameUniquenessChecker, RoleNameUniquenessChecker>();
             services.AddScoped<ISystemActionRepository, SystemActionRepository>();
+            services.AddScoped<IEventLogRepository, EventLogRepository>();
 
             services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();

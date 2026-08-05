@@ -1,6 +1,10 @@
+using HB_ERP.SharedKernel.Domain.Primitives;
+using Identity.Application.Common.Extensions;
 using Identity.Application.Common.Interfaces;
 using Identity.Domain;
 using Identity.Domain.DomainErrors;
+using Identity.Domain.Entities;
+using Identity.Domain.Enums;
 using Identity.Domain.Repositories;
 using Identity.Domain.VO;
 
@@ -13,17 +17,26 @@ namespace Identity.Application.Roles.Commands.UpdateRole
         private readonly ISystemActionRepository _systemActionRepository;
         private readonly IIdentityUnitOfWork _unitOfWork;
         private readonly IRoleNameUniquenessChecker _roleNameUniquenessChecker;
+        private readonly IEventLogRepository _eventLogRepository;
+        private readonly IFiscalClock _fiscalClock;
+        private readonly ICurrentUserProvider _currentUser;
 
         public UpdateRoleCommandHandler(
             IRoleRepository roleRepository,
             ISystemActionRepository systemActionRepository,
             IIdentityUnitOfWork unitOfWork,
-            IRoleNameUniquenessChecker roleNameUniquenessChecker)
+            IRoleNameUniquenessChecker roleNameUniquenessChecker,
+            IEventLogRepository eventLogRepository,
+            IFiscalClock fiscalClock,
+            ICurrentUserProvider currentUser)
         {
             _roleRepository = roleRepository;
             _systemActionRepository = systemActionRepository;
             _unitOfWork = unitOfWork;
             _roleNameUniquenessChecker = roleNameUniquenessChecker;
+            _eventLogRepository = eventLogRepository;
+            _fiscalClock = fiscalClock;
+            _currentUser = currentUser;
         }
 
         public async Task<ErrorOr<Updated>> Handle(
@@ -59,6 +72,16 @@ namespace Identity.Application.Roles.Commands.UpdateRole
             }
 
             await _roleRepository.UpdateAsync(role, cancellationToken);
+
+            var eventLog = EventLog.Create(
+                EventLogType.RoleUpdated,
+                _fiscalClock.VenezuelaNow,
+                $"Rol '{role.Name}' actualizado",
+                _currentUser.GetUserIdOrNull(),
+                entityType: nameof(Role),
+                entityId: role.Id.Value);
+            await _eventLogRepository.AddAsync(eventLog, cancellationToken);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Updated;

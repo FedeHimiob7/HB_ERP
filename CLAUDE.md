@@ -57,6 +57,7 @@ All domain entities extend `AggregateRoot<TId>`. Key primitives:
 - Integration events live in `HB_ERP.SharedKernel/IntegrationEvents/` and are shared across modules
 - `ICurrencyConverter` / `CurrencyConverter` — injectable, stateless, registered as Singleton. Converts VES↔USD↔EUR. Used **only in Query Handlers**, never in domain entities. `ToUSD(amount, currencyCode, exchangeRate)` / `FromUSD(amountUSD, currencyCode, exchangeRate)`.
 - `IFiscalClock` / `FiscalClock` — injectable, registered as Singleton. Expone `UtcNow`, `VenezuelaNow`, `VenezuelaToday` (offset fijo UTC-4, sin DST). Se usa para que toda fecha fiscal (`ExchangeRate.RegisterDate`, horarios de `BCVRateSyncWorker`, y en el futuro cualquier documento fiscal) refleje el calendario de Venezuela y no la hora del servidor. Los command handlers inyectan `IFiscalClock` y pasan `_fiscalClock.VenezuelaNow` a la entidad — la entidad nunca llama `DateTime.UtcNow` internamente, recibe la fecha como parámetro del caller.
+- `IEffectiveDated` (`HB_ERP.SharedKernel/Domain/Primitives/`) — interfaz con una sola propiedad `DateTime EffectiveFrom`. Generaliza el patrón inmutable que ya usaba `ExchangeRate` (un registro nuevo por cada cambio, nunca se edita uno existente) para cualquier valor fiscal versionado por fecha. `GetEffectiveAsOfAsync<T>(this IQueryable<T>, DateOnly asOfDate, CancellationToken)` (`HB_ERP.SharedKernel/Infrastructure/Extensions/EffectiveDatedQueryExtensions.cs`) resuelve el registro vigente a una fecha dada (`EffectiveFrom < asOfDate + 1 día`, ordenado descendente, primero). Primer consumidor: `FiscalTaxRate` (ver tabla de entidades de MasterData). Reusar para futuros parámetros versionados (Unidad Tributaria, tramos IGTF) en vez de reinventar el patrón `Current/Previous`.
 
 ### Cross-module communication
 Modules do **not** reference each other directly. Communication is async:
@@ -98,6 +99,10 @@ Todas las entidades de MasterData e Inventory siguen el mismo patrón de paginac
 | `ProductServiceLine` | `Name`, `Description` | — |
 | `Unit` | `Name`, `Description` | — |
 | `Tax` | `Name` | `TaxType` |
+| `Branch` | `Name`, `Address` | — |
+| `FiscalTerminal` | `Name` | `BranchId` |
+
+**Nota:** `Company` no tiene paginación — es fila única por instalación (`CompanyId.Singleton`), se consulta vía `GET /api/companies/current`, no vía `GetAll`/`GetPaged`. `FiscalTaxRate` tampoco tiene paginación propia — es hijo de `Tax`, se consulta vía `GET /api/taxes/{id}/effective?date=` (resuelve la tasa vigente a una fecha).
 
 **Entidades Inventory con paginación implementada:**
 | Entidad | SearchTerm busca en | Filtros extra |
@@ -170,10 +175,14 @@ El JWT generado incluye claims: `sub` (userId), `email`, `unique_name` (firstNam
 | `State` | Estado/provincia; siempre vinculado a un `Country` |
 | `City` | Ciudad; siempre vinculada a un `State` |
 | `Unit` | Unidad de medida |
-| `Tax` | Impuesto: nombre, `TaxType` (enum: `IVA=1`, `IGTF=2`, `ISLR=3`), `Rate` (%). Agregar nuevos tipos al enum. |
+| `Tax` | Identidad/catálogo del impuesto: nombre, `TaxType` (enum: `IVA=1`, `IGTF=2`, `ISLR=3`). **Ya no tiene `Rate`** — la alícuota vive en `FiscalTaxRate`. Agregar nuevos tipos al enum. |
+| `FiscalTaxRate` | Valor versionado de `Tax`: `TaxId` (FK), `Rate`, `EffectiveFrom`. Implementa `IEffectiveDated`. Inmutable y **sin `IsActive`** — nunca se oculta una fila puntual, solo se acumulan versiones; el motor fiscal resuelve la tasa vigente a una fecha con `GetEffectiveAsOfAsync`. Convención de nombre `Fiscal*` para la mitad versionada de cualquier futuro split identidad/valor (ver `IEffectiveDated` en SharedKernel). |
 | `ExchangeRate` | Tasa de cambio Bs/USD. `Source` enum: `BCV=1`, `Manual=2`. Un registro por cambio de valor. |
+| `Company` | Perfil fiscal de la instalación — **fila única** (`CompanyId.Singleton`, no multi-tenant: una instalación = una empresa/RIF). `Rif` (validado con regex `^[VEJPG]-\d{8,9}-\d$`), `LegalName`, `RegisteredAddress`, `TaxpayerType` (enum: `Ordinario=1`, `Formal=2`, `Especial=3`). |
+| `Branch` | Sucursal física de la `Company`; N por `Company`. `CompanyId` (FK), `Name`, `Address`, `SequenceNumber` (correlativo para completar `Product.Code` cuando se implemente el segmento de sucursal — ver "Premisa de migración" abajo). |
+| `FiscalTerminal` | Punto de emisión (caja/máquina fiscal/canal digital) dentro de una `Branch`; N por `Branch`. `BranchId` (FK), `Name`, `EmissionMethod` (enum: `MaquinaFiscal=1`, `FormaLibre=2`, `Digital=3`). Necesita secuencia propia de número de control fiscal (mismo patrón UPDLOCK que `ProductCodeCounter`) — pendiente de implementar junto con `FiscalDocument`. |
 
-Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`), excepto `ExchangeRate` (es inmutable — cada cambio genera un registro nuevo).
+Todos los aggregates de MasterData implementan activación/desactivación (`IsActive`), excepto `ExchangeRate`, `FiscalTaxRate` (inmutables — cada cambio genera un registro nuevo) y `Company` (fila única, no se desactiva).
 
 ### Inventory module — entities
 | Entity | Description |
