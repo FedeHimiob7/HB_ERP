@@ -436,9 +436,11 @@ src/Modules/{Modulo}/
     Application.Tests/
     Infrastructure.Tests/
 ```
-**Estado actual:** `MasterData` e `Inventory` ya tienen `Domain.Tests` (cubriendo `Tax`, `ExchangeRate`, `Product`).
-`Identity` todavía no tiene ningún proyecto de test. `Application.Tests`/`Infrastructure.Tests` no existen
-todavía en ningún módulo.
+**Estado actual:** `MasterData` e `Inventory` ya tienen `Domain.Tests` (cubriendo `Tax`, `ExchangeRate`,
+`Product`, `ProductCodeCounter`). `Identity` ya tiene `Domain.Tests` (cubriendo `EventLog` únicamente —
+`User`/`Role`/`SystemAction` todavía no tienen tests propios). `Inventory` ya tiene el primer
+`Application.Tests` del repo (cubriendo `GenerateProductCodeCommandHandler`, con `NSubstitute`) — el resto
+de los módulos todavía no tiene `Application.Tests`/`Infrastructure.Tests`.
 
 **Convenciones de código:**
 - Framework: **xUnit** puro (sin MSTest/NUnit). Las clases de test no llevan atributo de clase (`[TestClass]`
@@ -448,6 +450,18 @@ todavía en ningún módulo.
   accidentales).
 - Cada entidad y cada método nuevo debe llevar su prueba unitaria en el proyecto de test de la capa
   correspondiente — expectativa permanente del flujo de trabajo, no algo puntual.
+- **Todo test debe llevar comentarios explícitos** explicando qué hace cada bloque y por qué (qué se está
+  mockeando, qué guard/rama del código se está activando, por qué se espera tal resultado). No hace falta
+  que sean extensos ni repitan lo obvio línea por línea, pero sí que una persona sin experiencia en testing
+  pueda seguir el archivo y entender la intención de cada `Arrange`/mock/assert. Motivo: quien mantiene este
+  repo está aprendiendo testing/mocking recién ahora — el código de test es, en sí mismo, la documentación
+  de cómo funciona el mecanismo.
+- **Mocking**: `NSubstitute` es la librería elegida para los tests de `Application`/`Infrastructure` que
+  necesitan simular dependencias (repositorios, `ICurrentUserProvider`, etc.) — no hay otra en el repo, no
+  mezclar con Moq/FakeItEasy. Patrón básico: `Substitute.For<IInterfaz>()` crea el doble; `.Returns(...)`
+  define qué devuelve; `Arg.Any<T>()` acepta cualquier argumento, `Arg.Is<T>(predicado)` exige que cumpla
+  una condición puntual; `.Received(n)` verifica que se haya llamado tal método tal cantidad de veces (en
+  vez de verificar un valor devuelto, verifica que pasó una interacción concreta).
 - Al anidar un proyecto de test dentro de la carpeta del proyecto que testea (caso SharedKernel), hay que
   excluir esa subcarpeta del globbing del `.csproj` padre (`<Compile Remove="HB_ERP.SharedKernel.Tests\**" />`
   + `EmbeddedResource`/`None` iguales) — si no, el SDK de .NET intenta compilar los archivos del proyecto de

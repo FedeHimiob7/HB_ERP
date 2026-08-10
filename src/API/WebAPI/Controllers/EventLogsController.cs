@@ -3,11 +3,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.APIModels.Identity.EventLog;
 
-namespace WebAPI.Controllers.Identity_Authenticate
+namespace WebAPI.Controllers
 {
+    // Fachada HTTP compartida para los EventLog de todos los módulos que tengan uno.
+    // Cada módulo mantiene su propia tabla/query — este controller solo unifica el
+    // namespace de rutas (api/EventLogs/{modulo}/paged) para que el UI tenga un único
+    // lugar donde buscar auditoría, sin que eso implique compartir DbContext entre módulos.
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/EventLogs")]
     public class EventLogsController : ApiController
     {
         private readonly ISender _mediator;
@@ -17,8 +21,9 @@ namespace WebAPI.Controllers.Identity_Authenticate
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
-        [HttpGet("paged")]
-        public async Task<IActionResult> GetPaged(
+        // Identity / Security-IAM: login, altas/bajas de usuarios, cambios de roles y permisos.
+        [HttpGet("security/paged")]
+        public async Task<IActionResult> GetSecurityPaged(
             [FromQuery] GetEventLogPagedRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -38,5 +43,8 @@ namespace WebAPI.Controllers.Identity_Authenticate
                 errors => Problem(errors.ToList())
             );
         }
+
+        // Próxima acción a agregar acá cuando exista (F3): GetFiscalPaged → api/EventLogs/fiscal/paged,
+        // delegando a la query de EventLog del módulo Billing/FiscalDocument.
     }
 }
