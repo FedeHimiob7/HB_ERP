@@ -8,7 +8,8 @@ namespace MasterData.Application.Companies.Commands.CreateCompany
         {
             RuleFor(x => x.Rif)
                 .NotEmpty().WithMessage("El RIF de la empresa es obligatorio.")
-                .MaximumLength(20).WithMessage("El RIF no puede exceder los 20 caracteres.");
+                .MaximumLength(20).WithMessage("El RIF no puede exceder los 20 caracteres.")
+                .Matches(@"^[VEJPGvejpg]-\d{8,9}-\d$").WithMessage("El RIF no tiene un formato válido (ej. J-401027631-4).");
 
             RuleFor(x => x.LegalName)
                 .NotEmpty().WithMessage("La razón social es obligatoria.")

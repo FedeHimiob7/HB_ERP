@@ -11,4 +11,8 @@
     <ProjectReference Include="..\MasterData.Domain\MasterData.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Application.Tests" />
+  </ItemGroup>
+
 </Project>

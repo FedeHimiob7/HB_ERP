@@ -29,4 +29,8 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Infrastructure.Tests" />
+  </ItemGroup>
+
 </Project>

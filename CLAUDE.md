@@ -436,11 +436,29 @@ src/Modules/{Modulo}/
     Application.Tests/
     Infrastructure.Tests/
 ```
-**Estado actual:** `MasterData` e `Inventory` ya tienen `Domain.Tests` (cubriendo `Tax`, `ExchangeRate`,
-`Product`, `ProductCodeCounter`). `Identity` ya tiene `Domain.Tests` (cubriendo `EventLog` únicamente —
-`User`/`Role`/`SystemAction` todavía no tienen tests propios). `Inventory` ya tiene el primer
-`Application.Tests` del repo (cubriendo `GenerateProductCodeCommandHandler`, con `NSubstitute`) — el resto
-de los módulos todavía no tiene `Application.Tests`/`Infrastructure.Tests`.
+**Estado actual (cobertura integral, 2026-08-10 — 434 tests, 0 fallos en toda la solución):**
+- `HB_ERP.SharedKernel.Tests`: `FiscalClock` + `GetEffectiveAsOfAsync` (con EF Core InMemory, no requiere
+  LocalDB porque es lógica LINQ pura). 7 tests.
+- `MasterData`: `Domain.Tests` cubre las 12 entidades (`Branch`, `City`, `Company`, `Country`, `Currency`,
+  `ExchangeRate`, `FiscalTaxRate`, `FiscalTerminal`, `ProductServiceLine`, `State`, `Tax`, `Unit`) — 82 tests.
+  `Application.Tests` cubre los 64 handlers de los 11 agregados (incluye el domain event handler
+  `CurrencyCreatedDomainEventHandler`, y los validators de `Rif`) — 138 tests. `Infrastructure.Tests`
+  (primero del repo, contra LocalDB real) cubre el locking UPDLOCK/HOLDLOCK/Serializable de
+  `BranchRepository.ReserveNextSequenceNumberAndAddAsync` — 1 test de concurrencia (15 requests paralelas).
+- `Identity`: `Domain.Tests` cubre `EventLog`, `User`, `Role`, `SystemAction` — 27 tests. `Application.Tests`
+  cubre los 20 handlers (los 12 que escriben `EventLog` se testean específicamente por el `EventLogType`
+  correcto, sin re-testear toda su lógica preexistente — ver política de cobertura abajo) — 31 tests.
+- `Inventory`: `Domain.Tests` cubre las 9 entidades (incluye `Product`, `ProductCodeCounter`,
+  `ProductPriceHistory`) — 56 tests. `Application.Tests` cubre los 46 handlers, incluyendo el motor de
+  cálculo puro `CalculatePricesQueryHandler` (sin dependencias que mockear, prueba directa de la regla de
+  IGTF compuesto) — 91 tests. `Infrastructure.Tests` contra LocalDB cubre el locking de
+  `ProductCodeCounterRepository.ReserveNextAsync` — 1 test de concurrencia.
+
+**Política de cobertura actual (reemplaza la del 2026-08-05 "solo handlers nuevos, no retroactivo"):**
+cobertura integral — todo handler y toda entidad tienen test, sin importar si son de F0 o preexistentes.
+Para los handlers que ya existían antes de F0 y solo ganaron una llamada a `EventLog`/similar, el test
+verifica específicamente ese comportamiento nuevo (vía `Received()` sobre el repositorio de log), no
+duplica la cobertura completa de la lógica de negocio previa si esta ya es exhaustiva por otro lado.
 
 **Convenciones de código:**
 - Framework: **xUnit** puro (sin MSTest/NUnit). Las clases de test no llevan atributo de clase (`[TestClass]`
@@ -467,6 +485,27 @@ de los módulos todavía no tiene `Application.Tests`/`Infrastructure.Tests`.
   + `EmbeddedResource`/`None` iguales) — si no, el SDK de .NET intenta compilar los archivos del proyecto de
   test anidado dentro del ensamblado principal y falla con errores de atributos duplicados. No aplica al
   patrón de módulos (`Tests/` es sibling de `{Modulo}.Domain/`, no anidado dentro).
+- Los handlers de `Application`/`Infrastructure` son `internal sealed class` — cada `{Modulo}.Application.csproj`
+  y `{Modulo}.Infrastructure.csproj` necesita `<InternalsVisibleTo Include="Application.Tests" />` /
+  `<InternalsVisibleTo Include="Infrastructure.Tests" />` (el nombre del `InternalsVisibleTo` es el nombre
+  corto del proyecto de test, no el namespace) para que NSubstitute/xUnit puedan instanciarlos e invocarlos.
+- **`Substitute.For<ILogger<T>>()` falla cuando `T` es `internal`**: Castle DynamicProxy no puede generar el
+  proxy dinámico porque `Microsoft.Extensions.Logging.Abstractions` es un ensamblado fuertemente firmado y
+  no acepta `InternalsVisibleTo` dinámico hacia el ensamblado de proxies de NSubstitute. Como casi nunca se
+  verifica el contenido de los logs en los tests, la solución es usar
+  `Microsoft.Extensions.Logging.Abstractions.NullLogger<T>.Instance` (logger real "no-op") en vez de un
+  substitute — no requiere proxy, evita el problema de raíz.
+- **`Infrastructure.Tests` corre contra SQL Server LocalDB real** (instancia `MSSQLLocalDB`, ya presente en
+  la máquina de desarrollo — verificar con `sqllocaldb info`), no contra un mock ni contra EF InMemory,
+  porque lo que hay que probar (patrón `UPDLOCK`/`HOLDLOCK`/`Serializable` en `BranchRepository` y
+  `ProductCodeCounterRepository`) es comportamiento específico del motor de SQL Server que un mock no puede
+  ejercitar. Patrón: cada test crea una base con nombre único (`Guid.NewGuid()`) vía
+  `Database.EnsureCreatedAsync()` en `IAsyncLifetime.InitializeAsync` (alcanza con el esquema actual del
+  modelo, no hace falta reproducir migraciones históricas) y la borra con `EnsureDeletedAsync()` en
+  `DisposeAsync`. El test de concurrencia dispara N tareas en paralelo, cada una con su propio `DbContext`
+  (nunca se comparte una instancia entre threads) apuntando a la misma base, y verifica que los valores
+  devueltos son únicos — confirmado manualmente que el test detecta una regresión real: sacando el
+  `UPDLOCK` del SQL crudo, el test falla con un deadlock de SQL Server en vez de pasar en falso.
 
 ## Key packages
 | Package | Purpose |

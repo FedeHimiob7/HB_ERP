@@ -93,7 +93,7 @@ namespace Identity.Domain
         }
         public void Deactivate()
         {
-            if (IsActive)
+            if (!IsActive)
                 return;
             IsActive = false;
             Raise(new UserDeactivatedDomainEvent(
